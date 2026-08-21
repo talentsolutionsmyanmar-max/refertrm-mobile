@@ -8,7 +8,8 @@
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#001F3F"
+      "backgroundColor": "#2A3764",
+      "image": "./assets/icon.png"
     },
     "ios": {
       "bundleIdentifier": "com.refertrm.app",
@@ -17,7 +18,8 @@
     "android": {
       "package": "com.refertrm.app",
       "adaptiveIcon": {
-        "backgroundColor": "#001F3F"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2A3764"
       },
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
       "intentFilters": [
@@ -46,7 +48,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "replace-when-eas-org-exists"
+        "projectId": "cae45fbe-c884-406f-929d-14468d7e3eeb"
       }
     }
   }
