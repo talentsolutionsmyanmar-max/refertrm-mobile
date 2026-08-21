@@ -7,6 +7,8 @@ P1 is read-only public GETs. A native Bearer 401 is irrelevant until we ship app
 
 **Not a new route.** Extend the existing helper so `/api/apply` and `/api/user/me` work from a native client.
 
+This file is a reference copy in `refertrm-mobile`. Implementation belongs in `25referTRM`. Grok cannot write that repo (GitHub is scoped to this repo only).
+
 ## Why
 
 `src/lib/api-auth.ts` `getAuthUserId()` reads Supabase session from **Next.js cookies only**.  
@@ -29,6 +31,21 @@ Do **not** add `/api/mobile/apply`. Do **not** let the app insert into `job_appl
 3. Accept referral from JSON `referralCode` **or** cookie `refertrm_ref`. Same `resolveReferrer` after that.
 4. `/api/user/me` rides the helper change. No other behaviour change. It already uses service-role after auth; do not copy that pattern into apply.
 
+## Implementation clarification (binding)
+
+Do not make all 182 `getAuthUserId` consumers implicitly Bearer-capable through ambient `headers()`.
+
+- Bearer handling must be request-scoped: callers explicitly pass `Request` / `NextRequest`.
+- Cookie-only callers retain identical behavior.
+- `POST /api/apply` must use the same Bearer JWT for its RLS mutation client.
+- `GET /api/apply` must also use that JWT for its RLS read client.
+- `/api/user/me` explicitly passes the request, verifies Bearer, then may retain its existing service-role lookup.
+- Invalid Bearer must fail closed, never downgrade to cookies.
+- JSON `referralCode` takes precedence over `refertrm_ref` cookie.
+- Enumerate every `getAuthUserId` consumer and prove unchanged cookie behavior.
+
+Authenticating Bearer globally while leaving downstream clients cookie-scoped creates inconsistent authenticated-as-anon behavior. That is a NO-GO.
+
 ## TEST
 
 - Cookie session from www.refertrm.com: apply + `/api/user/me` unchanged.
@@ -37,9 +54,10 @@ Do **not** add `/api/mobile/apply`. Do **not** let the app insert into `job_appl
 - `GET /api/user/me` with Bearer, no cookies → 200 profile.
 - 6th apply in one hour → 429 `rate_limit`.
 - Inactive job → 409 `JOB_INACTIVE`.
-- `referralCode` in body attributes referrer when cookie absent.
+- `referralCode` in body attributes referrer when cookie absent. JSON wins over the cookie.
+- Invalid Bearer, even with a valid cookie present → fail closed (401). Do not fall back to cookies.
 - `candidate_id` on `job_applications` equals `auth.users.id` (UUID). `User.id` TEXT cast stays server-side.
 
 ## SUCCESS
 
-Web apply still works. Native apply/profile can use the existing routes. No new endpoint. No service-role in the APK.
+Web apply still works. Native apply/profile can use the existing routes. No new endpoint. No service-role in the APK. Cookie-only callers of `getAuthUserId` are unchanged.
