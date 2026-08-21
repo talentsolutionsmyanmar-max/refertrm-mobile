@@ -6,11 +6,19 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "splash": { "backgroundColor": "#001F3F" },
-    "ios": { "bundleIdentifier": "com.refertrm.app", "supportsTablet": false },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "backgroundColor": "#001F3F"
+    },
+    "ios": {
+      "bundleIdentifier": "com.refertrm.app",
+      "supportsTablet": false
+    },
     "android": {
       "package": "com.refertrm.app",
-      "adaptiveIcon": { "backgroundColor": "#001F3F" },
+      "adaptiveIcon": {
+        "backgroundColor": "#001F3F"
+      },
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
       "intentFilters": [
         {
@@ -18,14 +26,28 @@
           "autoVerify": true,
           "category": ["BROWSABLE", "DEFAULT"],
           "data": [
-            { "scheme": "https", "host": "www.refertrm.com", "pathPrefix": "/jobs" },
-            { "scheme": "https", "host": "www.refertrm.com", "pathPrefix": "/learn" }
+            {
+              "scheme": "https",
+              "host": "www.refertrm.com",
+              "pathPrefix": "/jobs"
+            },
+            {
+              "scheme": "https",
+              "host": "www.refertrm.com",
+              "pathPrefix": "/learn"
+            }
           ]
         }
       ]
     },
     "plugins": ["expo-router"],
-    "experiments": { "typedRoutes": true },
-    "extra": { "eas": { "projectId": "replace-when-eas-org-exists" } }
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "replace-when-eas-org-exists"
+      }
+    }
   }
 }
