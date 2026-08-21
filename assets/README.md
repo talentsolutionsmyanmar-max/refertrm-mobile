@@ -24,7 +24,7 @@ The complete artwork is 2600×953. Square icons letterbox the full mark on navy.
 The full wordmark is unreadable at launcher size. Android displays the icon at ~48dp regardless of the xxxhdpi 192px file. Native pixel size does not fix real-device legibility.
 
 - Do not invent a compact symbol.
-- Do not restore a Z.
+- Do not restore a retired compact glyph.
 - Do not crop one letter from TRM.
 - Do not call the launcher icon production-ready.
 

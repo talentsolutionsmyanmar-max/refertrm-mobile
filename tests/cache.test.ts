@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { catalog } from "../src/cache/catalog.ts";
+import { resetGenerations } from "../src/cache/generation.ts";
 import { loadAcademy, loadJobs } from "../src/api/load.ts";
 import { resetMemoryKv } from "../src/storage/kv.ts";
 import type { Job } from "../src/api/types.ts";
@@ -45,6 +46,7 @@ function job(id: string, title: string): Job {
 
 test("failed refresh keeps cached jobs and academy", async (t) => {
   resetMemoryKv();
+  resetGenerations();
   const original = globalThis.fetch;
   let mode: "ok" | "fail" = "ok";
   globalThis.fetch = (async (input: string | URL | Request) => {
@@ -69,6 +71,7 @@ test("failed refresh keeps cached jobs and academy", async (t) => {
   t.after(() => {
     globalThis.fetch = original;
     resetMemoryKv();
+    resetGenerations();
   });
 
   const firstJobs = await loadJobs();
@@ -90,11 +93,13 @@ test("failed refresh keeps cached jobs and academy", async (t) => {
 
 test("empty cache surfaces the network error", async (t) => {
   resetMemoryKv();
+  resetGenerations();
   const original = globalThis.fetch;
   globalThis.fetch = (async () => new Response("down", { status: 500 })) as typeof fetch;
   t.after(() => {
     globalThis.fetch = original;
     resetMemoryKv();
+    resetGenerations();
   });
   await assert.rejects(() => loadJobs());
   await assert.rejects(() => loadAcademy());

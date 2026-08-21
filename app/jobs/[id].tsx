@@ -7,13 +7,15 @@ import { loadJobs } from "../../src/api/load";
 import { jobTypeLabel } from "../../src/api/project";
 import { Banner, Loading, RetryState } from "../../src/components/ui";
 import { copy } from "../../src/copy/en";
+import { parseRouteSegment } from "../../src/linking/ids";
 import { color, tap } from "../../src/theme";
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const jobId = Array.isArray(id) ? id[0] : id;
-  const query = useQuery({ queryKey: ["jobs"], queryFn: loadJobs });
-  const job = query.data?.jobs.find((item) => item.id === jobId || item.slug === jobId);
+  const rawId = Array.isArray(id) ? id[0] : id;
+  const jobId = parseRouteSegment(rawId);
+  const query = useQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
+  const job = jobId ? query.data?.jobs.find((item) => item.id === jobId || item.slug === jobId) : undefined;
   const cachedMeta = jobId ? catalog.findJob(jobId) : undefined;
   const cachedBody = jobId ? catalog.findJobBody(jobId) : undefined;
   const meta = job ?? cachedMeta;
@@ -22,9 +24,22 @@ export default function JobDetailScreen() {
     if (job) catalog.writeJobBody(job);
   }, [job]);
 
+  if (!jobId) {
+    return (
+      <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
+        <Text style={{ color: color.muted }}>{copy.errors.notFound}</Text>
+        <Link href="/" asChild>
+          <Pressable style={{ minHeight: tap, justifyContent: "center" }}>
+            <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.jobs}</Text>
+          </Pressable>
+        </Link>
+      </View>
+    );
+  }
+
   if (query.isLoading && !meta) return <Loading />;
 
-  if (!jobId || (!meta && query.isError && !cachedMeta)) {
+  if (!meta && query.isError && !cachedMeta) {
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
         <RetryState message={copy.errors.network} onRetry={() => void query.refetch()} />

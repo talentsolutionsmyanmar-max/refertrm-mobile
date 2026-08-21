@@ -33,12 +33,18 @@ export function hasMmBody(detail: Pick<AcademyModuleDetail, "contentMm">): boole
   return parseLessonBlocks(detail.contentMm).some((b) => (b.content ?? "").trim().length > 0);
 }
 
-/** Hide the toggle unless catalogue AND body flags AND a non-empty Myanmar body. */
+/**
+ * Toggle only when a Myanmar body exists.
+ * Catalogue mmReady (when known) AND detail mmContentReady must both be true.
+ * Direct deep links without catalogue use mmContentReady + body only.
+ */
 export function showMmToggle(
-  catalogMmReady: boolean,
+  catalogMmReady: boolean | undefined,
   detail: AcademyModuleDetail,
 ): boolean {
-  return catalogMmReady && Boolean(detail.mmContentReady) && hasMmBody(detail);
+  if (!hasMmBody(detail) || !detail.mmContentReady) return false;
+  if (catalogMmReady === false) return false;
+  return true;
 }
 
 export type QuizItem = {

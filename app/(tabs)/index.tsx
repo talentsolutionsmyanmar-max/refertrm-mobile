@@ -20,7 +20,7 @@ const PLACES: { id: JobPlace; label: string }[] = [
 
 export default function JobsScreen() {
   const online = useOnline();
-  const query = useQuery({ queryKey: ["jobs"], queryFn: loadJobs });
+  const query = useQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
   const [search, setSearch] = useState("");
   const [place, setPlace] = useState<JobPlace>("all");
   const jobs = query.data?.jobs ?? [];

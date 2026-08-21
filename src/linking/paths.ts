@@ -1,3 +1,5 @@
+import { parseRouteSegment } from "./ids";
+
 export type DeepLink =
   | { type: "jobs"; id: string }
   | { type: "learn"; slug: string }
@@ -24,40 +26,48 @@ function appPath(url: URL): string {
 }
 
 export function parseDeepLink(raw: string): DeepLink {
-  const trimmed = raw.trim();
-  if (!trimmed) return { type: "invalid" };
-
-  let url: URL;
   try {
-    url = new URL(trimmed);
+    const trimmed = raw.trim();
+    if (!trimmed) return { type: "invalid" };
+
+    let url: URL;
+    try {
+      url = new URL(trimmed);
+    } catch {
+      return { type: "invalid" };
+    }
+
+    const scheme = url.protocol.replace(":", "").toLowerCase();
+    if (scheme !== "refertrm" && scheme !== "https") return { type: "invalid" };
+    if (scheme === "https" && !HOSTS.has(url.hostname.toLowerCase())) return { type: "invalid" };
+
+    const path = appPath(url);
+    const jobs = path.match(/^\/jobs\/([^/]+)$/);
+    if (jobs?.[1]) {
+      const id = parseRouteSegment(jobs[1]);
+      if (!id) return { type: "invalid" };
+      return { type: "jobs", id };
+    }
+    const learn = path.match(/^\/learn\/([^/]+)$/);
+    if (learn?.[1]) {
+      const slug = parseRouteSegment(learn[1]);
+      if (!slug) return { type: "invalid" };
+      return { type: "learn", slug };
+    }
+    return { type: "invalid" };
   } catch {
     return { type: "invalid" };
   }
-
-  const scheme = url.protocol.replace(":", "").toLowerCase();
-  if (scheme !== "refertrm" && scheme !== "https") return { type: "invalid" };
-  if (scheme === "https" && !HOSTS.has(url.hostname.toLowerCase())) return { type: "invalid" };
-
-  const path = appPath(url);
-  const jobs = path.match(/^\/jobs\/([^/]+)$/);
-  if (jobs?.[1]) {
-    const id = decodeURIComponent(jobs[1]).trim();
-    if (!id || id === "." || id === "..") return { type: "invalid" };
-    return { type: "jobs", id };
-  }
-  const learn = path.match(/^\/learn\/([^/]+)$/);
-  if (learn?.[1]) {
-    const slug = decodeURIComponent(learn[1]).trim();
-    if (!slug || slug === "." || slug === "..") return { type: "invalid" };
-    return { type: "learn", slug };
-  }
-  return { type: "invalid" };
 }
 
 export function jobsHref(id: string): string {
-  return `/jobs/${encodeURIComponent(id)}`;
+  const safe = parseRouteSegment(id);
+  if (!safe) return "/+not-found";
+  return `/jobs/${encodeURIComponent(safe)}`;
 }
 
 export function learnHref(slug: string): string {
-  return `/learn/${encodeURIComponent(slug)}`;
+  const safe = parseRouteSegment(slug);
+  if (!safe) return "/+not-found";
+  return `/learn/${encodeURIComponent(safe)}`;
 }

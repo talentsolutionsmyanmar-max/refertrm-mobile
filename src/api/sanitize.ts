@@ -1,26 +1,29 @@
 import type { AcademyModuleDetail, AcademyModuleListItem, Job } from "./types";
 
 /**
- * Public list can theoretically include inactive or fixture rows.
- * Do not treat the word "test" inside a real title (e.g. Test Engineer) as a fixture.
+ * Fail closed. Only explicit case-insensitive status === "active" is public.
+ * Missing/null/empty/unknown status is rejected. Demo/test tenants are rejected.
+ * A legitimate live row may omit tenantEnvironment.
  */
 export function isPublicJob(job: Job): boolean {
-  const status = (job.status ?? "active").toLowerCase();
-  if (status !== "active") return false;
+  if (typeof job.status !== "string") return false;
+  if (job.status.trim().toLowerCase() !== "active") return false;
 
-  const slug = (job.slug ?? "").toLowerCase();
   const title = (job.title ?? "").trim();
-  const company = (job.company?.name ?? "").trim().toLowerCase();
+  const slug = (job.slug ?? "").trim();
+  if (!job.id || !title || !slug) return false;
 
-  if (!job.id || !title) return false;
-  if (company === "demo" || company === "test" || company === "dummy" || company.includes("dummy company")) {
-    return false;
+  const env = job.company?.tenantEnvironment;
+  if (typeof env === "string") {
+    const tenant = env.trim().toLowerCase();
+    if (tenant === "demo" || tenant === "test") return false;
   }
-  if (slug.startsWith("demo-") || slug.startsWith("test-") || slug.includes("-demo-") || slug.includes("-fixture-")) {
-    return false;
-  }
-  if (/^\[(demo|test|fixture)\]/i.test(title)) return false;
-  if (/^(demo|test|fixture)[:\-]/i.test(title)) return false;
+
+  const company = (job.company?.name ?? "").trim().toLowerCase();
+  if (company === "demo" || company === "dummy") return false;
+  if (/^\[(demo|fixture)\]/i.test(title)) return false;
+  if (/^(demo|fixture)[:\-]/i.test(title)) return false;
+  if (slug.startsWith("demo-") || slug.includes("-fixture-")) return false;
   return true;
 }
 
@@ -55,5 +58,5 @@ export function sanitizeModules(modules: AcademyModuleListItem[]): AcademyModule
 export function isReadableModule(detail: AcademyModuleDetail | null | undefined): boolean {
   if (!detail) return false;
   if (detail.isPublished === false) return false;
-  return Boolean(detail.id && detail.slug);
+  return Boolean(detail.id && detail.slug && detail.titleEn);
 }

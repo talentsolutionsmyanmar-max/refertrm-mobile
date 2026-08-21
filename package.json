@@ -7,7 +7,7 @@
     "start": "expo start --android",
     "android": "expo start --android",
     "typecheck": "tsc --noEmit",
-    "test": "npx --yes tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@react-native-community/netinfo": "11.4.1",
@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "tsx": "4.20.6",
     "typescript": "~5.8.3"
   }
 }

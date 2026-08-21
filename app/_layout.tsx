@@ -36,12 +36,19 @@ export default function RootLayout() {
 
   useEffect(() => {
     const go = (url: string | null) => {
-      if (!url) return;
-      const parsed = parseDeepLink(url);
-      if (parsed.type === "jobs") router.push(jobsHref(parsed.id));
-      if (parsed.type === "learn") router.push(learnHref(parsed.slug));
+      try {
+        if (!url) return;
+        const parsed = parseDeepLink(url);
+        if (parsed.type === "jobs") router.push(jobsHref(parsed.id));
+        else if (parsed.type === "learn") router.push(learnHref(parsed.slug));
+        else router.push("/+not-found");
+      } catch {
+        router.push("/+not-found");
+      }
     };
-    void Linking.getInitialURL().then(go);
+    void Linking.getInitialURL().then(go).catch(() => {
+      router.push("/+not-found");
+    });
     const sub = Linking.addEventListener("url", (event) => go(event.url));
     return () => sub.remove();
   }, [router]);

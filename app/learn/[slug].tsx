@@ -8,24 +8,36 @@ import { parseLessonBlocks, parseQuiz, showMmToggle } from "../../src/api/lesson
 import { loadAcademy, loadModule } from "../../src/api/load";
 import { Banner, Chip, Loading, RetryState } from "../../src/components/ui";
 import { copy } from "../../src/copy/en";
+import { isLikelyModuleId, parseRouteSegment } from "../../src/linking/ids";
 import { color, tap } from "../../src/theme";
 
 export default function LessonScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const routeSlug = Array.isArray(slug) ? slug[0] : slug;
-  const catalogue = useQuery({ queryKey: ["academy"], queryFn: loadAcademy });
-  const listed =
-    catalogue.data?.modules.find((item) => item.slug === routeSlug || item.id === routeSlug) ??
-    (routeSlug ? catalog.findModule(routeSlug) : undefined);
-  const detail = useQuery({
-    queryKey: ["academy-module", listed?.id],
-    queryFn: () => loadModule(listed!.id),
-    enabled: Boolean(listed?.id),
+  const rawSlug = Array.isArray(slug) ? slug[0] : slug;
+  const routeSlug = parseRouteSegment(rawSlug);
+  const catalogue = useQuery({
+    queryKey: ["academy"],
+    queryFn: ({ signal }) => loadAcademy(signal),
+    enabled: Boolean(routeSlug),
   });
-  const cachedBody = listed ? catalog.findModuleBody(listed.id) : routeSlug ? catalog.findModuleBody(routeSlug) : undefined;
+  const listed = routeSlug
+    ? catalogue.data?.modules.find((item) => item.slug === routeSlug || item.id === routeSlug) ??
+      catalog.findModule(routeSlug)
+    : undefined;
+  const moduleId = listed?.id ?? (routeSlug && isLikelyModuleId(routeSlug) ? routeSlug : undefined);
+  const detail = useQuery({
+    queryKey: ["academy-module", moduleId],
+    queryFn: ({ signal }) => loadModule(moduleId!, signal),
+    enabled: Boolean(moduleId),
+  });
+  const cachedBody = moduleId
+    ? catalog.findModuleBody(moduleId)
+    : routeSlug
+      ? catalog.findModuleBody(routeSlug)
+      : undefined;
   const module = detail.data ?? cachedBody;
   const [mm, setMm] = useState(false);
-  const canToggle = module ? showMmToggle(Boolean(listed?.mmReady ?? module.mmReady), module) : false;
+  const canToggle = module ? showMmToggle(listed?.mmReady, module) : false;
 
   useEffect(() => {
     if (!canToggle) setMm(false);
@@ -42,7 +54,20 @@ export default function LessonScreen() {
   }, [module, mm]);
   const further = module ? safeHttpsUrl(module.furtherReadingUrl) : null;
 
-  if ((catalogue.isLoading && !listed) || (listed && detail.isLoading && !module)) return <Loading />;
+  if (!routeSlug) {
+    return (
+      <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
+        <Text style={{ color: color.muted }}>{copy.errors.notFound}</Text>
+        <Link href="/academy" asChild>
+          <Pressable style={{ minHeight: tap, justifyContent: "center" }}>
+            <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.academy}</Text>
+          </Pressable>
+        </Link>
+      </View>
+    );
+  }
+
+  if ((catalogue.isLoading && !listed && !module) || (moduleId && detail.isLoading && !module)) return <Loading />;
 
   if (!listed && !module) {
     if (catalogue.isError) {
@@ -64,7 +89,7 @@ export default function LessonScreen() {
     );
   }
 
-  if (listed && !module && detail.isError) {
+  if (moduleId && !module && detail.isError) {
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
         <Text style={{ color: color.muted }}>{copy.academy.bodyOffline}</Text>

@@ -11,7 +11,7 @@ import { color, tap } from "../../src/theme";
 
 export default function AcademyScreen() {
   const online = useOnline();
-  const query = useQuery({ queryKey: ["academy"], queryFn: loadAcademy });
+  const query = useQuery({ queryKey: ["academy"], queryFn: ({ signal }) => loadAcademy(signal) });
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [mmOnly, setMmOnly] = useState(false);

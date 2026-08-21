@@ -1,7 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { isPublicJob, sanitizeJobs, sanitizeModules } from "../src/api/sanitize.ts";
-import type { Job } from "../src/api/types.ts";
+import { parseJobRecord } from "../src/api/parse.ts";
+import type { Job, JobCompany } from "../src/api/types.ts";
+
+function company(over: Partial<JobCompany> = {}): JobCompany {
+  return {
+    id: "c1",
+    name: "Acme",
+    slug: "acme",
+    logo: null,
+    industry: null,
+    location: null,
+    overallRating: null,
+    tenantEnvironment: null,
+    ...over,
+  };
+}
 
 function job(over: Partial<Job> & Pick<Job, "id" | "title">): Job {
   return {
@@ -34,24 +49,47 @@ function job(over: Partial<Job> & Pick<Job, "id" | "title">): Job {
     shareCount: null,
     screeningQuestions: null,
     postedAt: null,
-    company: { id: "c1", name: "Acme", slug: "acme", logo: null, industry: null, location: null, overallRating: null, tenantEnvironment: null },
+    company: company(),
     _count: null,
     ...over,
   };
 }
 
 test("keeps active jobs including Test Engineer titles", () => {
-  const keep = job({ id: "1", title: "QA Test Engineer", slug: "qa-test-engineer" });
-  assert.equal(isPublicJob(keep), true);
+  assert.equal(isPublicJob(job({ id: "1", title: "QA Test Engineer", slug: "qa-test-engineer" })), true);
+  assert.equal(isPublicJob(job({ id: "2", title: "Role", status: "Active" })), true);
+  assert.equal(isPublicJob(job({ id: "3", title: "Role", company: company({ tenantEnvironment: "production" }) })), true);
+  assert.equal(isPublicJob(job({ id: "4", title: "Role", company: company({ tenantEnvironment: null }) })), true);
 });
 
-test("drops inactive, demo prefixes and dummy companies", () => {
-  assert.equal(isPublicJob(job({ id: "2", title: "Role", status: "closed" })), false);
-  assert.equal(isPublicJob(job({ id: "3", title: "[DEMO] Warehouse", slug: "demo-warehouse" })), false);
-  assert.equal(
-    isPublicJob(job({ id: "4", title: "Role", company: { id: "x", name: "Demo", slug: "demo", logo: null, industry: null, location: null, overallRating: null, tenantEnvironment: null } })),
-    false,
-  );
+test("null missing empty and unknown status are rejected", () => {
+  assert.equal(isPublicJob(job({ id: "n", title: "Role", status: null as unknown as string })), false);
+  const missing = job({ id: "m", title: "Open role" });
+  delete (missing as { status?: string }).status;
+  assert.equal(isPublicJob(missing as Job), false);
+  assert.equal(isPublicJob(job({ id: "e", title: "Role", status: "" })), false);
+  assert.equal(isPublicJob(job({ id: "u", title: "Role", status: "unknown" })), false);
+  assert.equal(isPublicJob(job({ id: "i", title: "Role", status: "inactive" })), false);
+  assert.equal(isPublicJob(job({ id: "d", title: "Role", status: "draft" })), false);
+  assert.equal(isPublicJob(job({ id: "c", title: "Role", status: "closed" })), false);
+});
+
+test("explicit demo and test tenant environments are rejected", () => {
+  assert.equal(isPublicJob(job({ id: "td", title: "Role", company: company({ tenantEnvironment: "demo" }) })), false);
+  assert.equal(isPublicJob(job({ id: "tt", title: "Role", company: company({ tenantEnvironment: "TEST" }) })), false);
+});
+
+test("reviewer probe: omitted status is not treated as active", () => {
+  const probe = parseJobRecord({
+    id: "93dd6ad8-a143-43f4-a188-413e1ae68ae8",
+    title: "Warehouse Staff",
+    slug: "makro-warehouse-staff",
+    company: { id: "c", name: "Makro" },
+  });
+  assert.equal(probe, null);
+  const withNull = job({ id: "p", title: "Warehouse Staff" });
+  delete (withNull as { status?: string }).status;
+  assert.equal(isPublicJob(withNull as Job), false);
 });
 
 test("sanitizeJobs de-duplicates", () => {
