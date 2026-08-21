@@ -113,6 +113,10 @@ export function parseJobRecord(raw: unknown): Job | null {
   };
 }
 
+function rejectAllDropped(inputLength: number, kept: number, kind: string): void {
+  if (inputLength > 0 && kept === 0) throw new MalformedResponseError(`${kind}_all_malformed`);
+}
+
 export function parseJobsEnvelope(raw: unknown): Job[] {
   const rec = asRecord(raw);
   if (!rec) throw new MalformedResponseError("jobs_envelope");
@@ -123,6 +127,7 @@ export function parseJobsEnvelope(raw: unknown): Job[] {
     const job = parseJobRecord(row);
     if (job) out.push(job);
   }
+  rejectAllDropped(rec.jobs.length, out.length, "jobs");
   return out;
 }
 
@@ -161,6 +166,7 @@ export function parseAcademyEnvelope(raw: unknown): AcademyModuleListItem[] {
     const mod = parseModuleListItem(row);
     if (mod) out.push(mod);
   }
+  rejectAllDropped(rec.modules.length, out.length, "modules");
   return out;
 }
 

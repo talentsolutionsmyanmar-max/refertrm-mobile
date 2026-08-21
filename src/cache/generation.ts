@@ -1,8 +1,14 @@
-/** Per-resource monotonic tickets. A newer issue makes older completions ineligible. */
+/** Per-resource monotonic tickets. Only a higher successful apply wins. */
 
 export type Generation = {
   issue: () => number;
   apply: (ticket: number) => boolean;
+  reset: () => void;
+};
+
+export type KeyedGeneration = {
+  issue: (key: string) => number;
+  apply: (key: string, ticket: number) => boolean;
   reset: () => void;
 };
 
@@ -15,7 +21,6 @@ export function createGeneration(): Generation {
       return issued;
     },
     apply(ticket: number) {
-      if (ticket !== issued) return false;
       if (ticket <= applied) return false;
       applied = ticket;
       return true;
@@ -27,9 +32,27 @@ export function createGeneration(): Generation {
   };
 }
 
+export function createKeyedGeneration(): KeyedGeneration {
+  const byKey = new Map<string, Generation>();
+  const of = (key: string) => {
+    const existing = byKey.get(key);
+    if (existing) return existing;
+    const created = createGeneration();
+    byKey.set(key, created);
+    return created;
+  };
+  return {
+    issue: (key) => of(key).issue(),
+    apply: (key, ticket) => of(key).apply(ticket),
+    reset() {
+      byKey.clear();
+    },
+  };
+}
+
 export const jobsGeneration = createGeneration();
 export const academyGeneration = createGeneration();
-export const moduleGeneration = createGeneration();
+export const moduleGeneration = createKeyedGeneration();
 
 export function resetGenerations(): void {
   jobsGeneration.reset();

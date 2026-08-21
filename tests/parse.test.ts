@@ -6,12 +6,12 @@ import { loadAcademy, loadJobs } from "../src/api/load.ts";
 import { parseAcademyEnvelope, parseJobsEnvelope, parseModuleEnvelope } from "../src/api/parse.ts";
 import { resetMemoryKv } from "../src/storage/kv.ts";
 
-function jobJson(id: string, title: string) {
+function jobJson(id: string, title: string, status = "active") {
   return {
     id,
     title,
     slug: id,
-    status: "active",
+    status,
     companyId: "c",
     company: { id: "c", name: "Acme", tenantEnvironment: null },
     description: `body-${id}`,
@@ -109,6 +109,69 @@ test("malformed 200 academy envelopes preserve cache", async (t) => {
   }
 });
 
+test("non-empty all-malformed jobs response preserves existing cache", async (t) => {
+  resetMemoryKv();
+  resetGenerations();
+  const original = globalThis.fetch;
+  let payload: unknown = { jobs: [jobJson("1", "Warehouse")] };
+  globalThis.fetch = (async () => new Response(JSON.stringify(payload), { status: 200 })) as typeof fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+    resetMemoryKv();
+    resetGenerations();
+  });
+  await loadJobs();
+  assert.equal(catalog.snapshot().jobs[0]?.id, "1");
+
+  payload = { jobs: [{ title: "missing identity and status" }] };
+  const result = await loadJobs();
+  assert.equal(result.fromCache, true);
+  assert.equal(result.jobs[0]?.id, "1");
+  assert.equal(catalog.snapshot().jobs[0]?.id, "1");
+  assert.equal(catalog.snapshot().jobs.length, 1);
+});
+
+test("non-empty all-malformed academy response preserves existing cache", async (t) => {
+  resetMemoryKv();
+  resetGenerations();
+  const original = globalThis.fetch;
+  let payload: unknown = { success: true, modules: [catalogueRow], count: 1 };
+  globalThis.fetch = (async () => new Response(JSON.stringify(payload), { status: 200 })) as typeof fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+    resetMemoryKv();
+    resetGenerations();
+  });
+  await loadAcademy();
+  assert.equal(catalog.snapshot().modules[0]?.id, catalogueRow.id);
+
+  payload = { success: true, modules: [{ titleEn: "missing identity" }], count: 1 };
+  const result = await loadAcademy();
+  assert.equal(result.fromCache, true);
+  assert.equal(result.modules[0]?.id, catalogueRow.id);
+  assert.equal(catalog.snapshot().modules.length, 1);
+});
+
+test("all-unsafe jobs rows preserve prior cache rather than persisting empty", async (t) => {
+  resetMemoryKv();
+  resetGenerations();
+  const original = globalThis.fetch;
+  let payload: unknown = { jobs: [jobJson("1", "Warehouse")] };
+  globalThis.fetch = (async () => new Response(JSON.stringify(payload), { status: 200 })) as typeof fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+    resetMemoryKv();
+    resetGenerations();
+  });
+  await loadJobs();
+
+  payload = { jobs: [jobJson("draft-1", "Closed role", "draft")] };
+  const result = await loadJobs();
+  assert.equal(result.fromCache, true);
+  assert.equal(catalog.snapshot().jobs[0]?.id, "1");
+  assert.equal(catalog.snapshot().jobs.length, 1);
+});
+
 test("valid empty arrays persist empty catalogues", async (t) => {
   resetMemoryKv();
   resetGenerations();
@@ -177,8 +240,11 @@ test("detail envelope matches live shape without catalogue-only fields", () => {
   assert.ok(Array.isArray(detail.content));
 });
 
-test("parseJobsEnvelope rejects missing arrays", () => {
+test("parseJobsEnvelope rejects missing arrays and all-malformed non-empty arrays", () => {
   assert.throws(() => parseJobsEnvelope({}));
   assert.throws(() => parseJobsEnvelope({ jobs: null }));
+  assert.throws(() => parseJobsEnvelope({ jobs: [{ title: "missing identity and status" }] }));
+  assert.throws(() => parseAcademyEnvelope({ modules: [{ titleEn: "Nope" }] }));
   assert.doesNotThrow(() => parseJobsEnvelope({ jobs: [] }));
+  assert.doesNotThrow(() => parseAcademyEnvelope({ modules: [] }));
 });
