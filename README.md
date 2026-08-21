@@ -4,7 +4,11 @@ Android client of live ReferTRM. Package id `com.refertrm.app`.
 
 Phase 1 is **read-only**: jobs browse/search/filter, academy catalogue + `/learn/:slug` reader, offline cache, two-tab shell, `refertrm://` deep links. No apply, no profile, no sign-in.
 
-This GitHub repo is the Expo source. EAS org and Play brand assets are still owed from KoKo.
+This GitHub repo is the Expo source. EAS project id: `cae45fbe-c884-406f-929d-14468d7e3eeb`.
+
+## Play Store
+
+Not ready for final submission. The launcher icon uses the complete illustrated TRM wordmark and is unreadable at ~48dp. That is an unresolved brand decision, not a technical failure. See [assets/README.md](assets/README.md).
 
 ## Stack
 
@@ -14,7 +18,7 @@ Expo / React Native, Hermes, TypeScript. Public GETs only:
 - `GET https://www.refertrm.com/api/academy/public`
 - `GET https://www.refertrm.com/api/academy/modules/:id`
 
-No Supabase anon key in P1. HTTP client is shaped for Bearer after Codex D-022.
+No Supabase anon key in P1. HTTP client is shaped for Bearer after Codex lands D-022 in `25referTRM`. This repo does not implement D-022 and does not add parallel mobile API routes. [Issue #1](https://github.com/talentsolutionsmyanmar-max/refertrm-mobile/issues/1) and `docs/D-022-bearer-session.md` are reference mirrors only.
 
 ## Counts
 
@@ -25,7 +29,5 @@ Never hardcode. Render live `jobs.length` and `modules.length`.
 ```
 npx expo start
 ```
-
-Play AAB: EAS once the Expo organisation exists.
 
 Do not write to `25referTRM` from this repo.
