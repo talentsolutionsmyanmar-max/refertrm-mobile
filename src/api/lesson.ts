@@ -1,3 +1,4 @@
+import { asPlainText } from "./text";
 import type { AcademyModuleDetail } from "./types";
 
 export type LessonBlock = {
@@ -14,15 +15,15 @@ export function parseLessonBlocks(raw: unknown): LessonBlock[] {
     try {
       value = JSON.parse(trimmed);
     } catch {
-      return [{ type: "text", content: raw }];
+      return [{ type: "text", content: asPlainText(raw) }];
     }
   }
   if (!Array.isArray(value)) return [];
   return value.flatMap((block) => {
     if (!block || typeof block !== "object") return [];
     const rec = block as Record<string, unknown>;
-    const content = typeof rec.content === "string" ? rec.content : "";
-    const title = typeof rec.title === "string" ? rec.title : undefined;
+    const content = typeof rec.content === "string" ? asPlainText(rec.content) : "";
+    const title = typeof rec.title === "string" ? asPlainText(rec.title) : undefined;
     const type = typeof rec.type === "string" ? rec.type : "text";
     return [{ type, title, content }];
   });
@@ -46,13 +47,23 @@ export type QuizItem = {
 };
 
 export function parseQuiz(raw: unknown): QuizItem[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.flatMap((item) => {
+  let value: unknown = raw;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    try {
+      value = JSON.parse(trimmed);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const rec = item as Record<string, unknown>;
-    const question = typeof rec.question === "string" ? rec.question : "";
+    const question = typeof rec.question === "string" ? asPlainText(rec.question) : "";
     const options = Array.isArray(rec.options)
-      ? rec.options.filter((o): o is string => typeof o === "string")
+      ? rec.options.filter((o): o is string => typeof o === "string").map(asPlainText)
       : [];
     if (!question || options.length === 0) return [];
     return [{ question, options }];

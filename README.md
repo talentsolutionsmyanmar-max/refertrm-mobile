@@ -27,6 +27,8 @@ Never hardcode. Render live `jobs.length` and `modules.length`.
 ## Run
 
 ```
+npm test
+npm run typecheck
 npx expo start
 ```
 

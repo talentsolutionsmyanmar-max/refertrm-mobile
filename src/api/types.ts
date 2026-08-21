@@ -115,7 +115,10 @@ export type AcademyModuleDetail = AcademyModuleListItem & {
   isPublished: boolean;
   difficultyLevel: string | null;
   quizQuestions?: Json | null;
+  quizQuestionsMm?: Json | null;
   learningObjectives?: Json | null;
+  furtherReadingUrl?: string | null;
+  furtherReadingLabel?: string | null;
 };
 
 export type AcademyModuleResponse = {

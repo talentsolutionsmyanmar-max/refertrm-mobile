@@ -25,6 +25,14 @@
       "intentFilters": [
         {
           "action": "VIEW",
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            { "scheme": "refertrm", "host": "*", "pathPrefix": "/jobs" },
+            { "scheme": "refertrm", "host": "*", "pathPrefix": "/learn" }
+          ]
+        },
+        {
+          "action": "VIEW",
           "autoVerify": true,
           "category": ["BROWSABLE", "DEFAULT"],
           "data": [

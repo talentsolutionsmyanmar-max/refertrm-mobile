@@ -28,16 +28,18 @@ export const copy = {
     descriptionOffline: "Job description needs a connection.",
     inactive: "This job is no longer listed as open.",
     requirements: "Requirements",
-    refresh: "Refresh",
+    refresh: "Try again",
     fullTime: "Full time",
     partTime: "Part time",
     contract: "Contract",
     internship: "Internship",
+    applyUnavailable:
+      "Applications are not available in this version. Use www.refertrm.com after sign-in.",
   },
 
   academy: {
     title: "Academy",
-    empty: "No published courses.",
+    empty: "No published courses match your search.",
     emptyOffline: "No saved courses yet. Connect once to download the catalogue.",
     minutes: (n: number) => `${n} min`,
     xp: (n: number) => `${n} XP`,
@@ -49,12 +51,13 @@ export const copy = {
     myanmarAvailable: "Myanmar available",
     allTopics: "All topics",
     questions: "Questions",
-    mmHidden:
-      "Myanmar for this lesson is not approved yet. English is shown instead.",
+    mmHidden: "Myanmar for this lesson is not approved yet. English is shown instead.",
+    furtherReading: "Further reading",
   },
 
   offline: {
     banner: "You are offline. Showing saved content.",
+    stale: "Saved content. It may be out of date.",
   },
 
   errors: {
@@ -62,6 +65,7 @@ export const copy = {
     notFound: "Not found.",
     network: "Cannot reach ReferTRM. Check your connection.",
     loading: "Loading…",
+    retry: "Try again",
   },
 } as const;
 
