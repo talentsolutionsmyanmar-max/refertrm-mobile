@@ -11,8 +11,10 @@ The complete illustrated TRM is preserved. No letter is cropped. No compact glyp
 | `ReferTRM-Whole-Mosaic-production-assets.zip` | `e67191aa86dd0a40784b6188a69c46dd27ade6140ab9963a77f6ff6060327e83` |
 | `qa/Whole-Mosaic-production-proof.png` | `e0fa2b0809b72c92467c380df93c67e0d4cc1f91d4314b50a063ec4c0c80ff70` |
 
-Pack README (unchanged): [`source/whole-mosaic/README.md`](source/whole-mosaic/README.md).  
-Proof sheet: [`qa/Whole-Mosaic-production-proof.png`](qa/Whole-Mosaic-production-proof.png).
+Pack README (byte-for-byte from the ZIP, not edited): [`source/whole-mosaic/README.md`](source/whole-mosaic/README.md).  
+Proof sheet (byte-for-byte from the ZIP, not edited): [`qa/Whole-Mosaic-production-proof.png`](qa/Whole-Mosaic-production-proof.png).
+
+Those two artifacts were created **before** this repository integration. The pack README line “No files have been committed to GitHub” is original pre-integration provenance. It is not a statement about this branch after the Whole Mosaic commit.
 
 Canonical geometry from the pack:
 
@@ -23,6 +25,8 @@ Canonical geometry from the pack:
 
 ## Expo public configuration
 
+Managed Expo builds consume `app.json` plus the live files under `assets/icon.png`, `assets/adaptive-icon*.png`, and `assets/play/` / `assets/launcher/` as mapped below. **`app.json` and Expo prebuild generate the native Android/iOS resources used by managed builds.**
+
 `app.json` resolves:
 
 - `expo.icon` → `assets/icon.png` (1024×1024 opaque Whole Mosaic)
@@ -32,6 +36,10 @@ Canonical geometry from the pack:
 - `expo.android.adaptiveIcon.backgroundColor` → `#2A3764`
 - `expo.android.adaptiveIcon.monochromeImage` → `assets/adaptive-icon-monochrome.png`
 - Package `com.refertrm.app` and EAS project `cae45fbe-c884-406f-929d-14468d7e3eeb` unchanged
+
+## Pack inventories (not native project folders)
+
+`assets/android/**` and `assets/ios/AppIcon.appiconset/**` are **preserved source/reference inventories** from the approved production pack. They are **not** independently wired native project folders in this managed Expo repository. There is no top-level `android/` or `ios/` app project here; prebuild emits those from `app.json` and the Expo-mapped assets above.
 
 ## Live mapping (Expo / Android / iOS)
 
@@ -46,8 +54,8 @@ Canonical geometry from the pack:
 | `play/adaptive-background-1024.png` | same as adaptive background | 1024×1024 | RGBA | opaque |
 | `launcher/ic_launcher-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}.png` | `android/mipmap-*/ic_launcher.png` | 48–192 | RGBA | opaque |
 | `launcher/ic_launcher_round-*.png` | `android/mipmap-*/ic_launcher_round.png` | 48–192 | RGBA | transparent round mask |
-| `android/**` | pack `android/` resource tree | — | — | native mipmap / drawable / adaptive XML |
-| `ios/AppIcon.appiconset/` | pack iOS appiconset 20–1024 | 20–1024 | RGBA | opaque |
+| `android/**` | pack `android/` resource tree | — | — | reference inventory only; not a wired native folder |
+| `ios/AppIcon.appiconset/` | pack iOS appiconset 20–1024 | 20–1024 | RGBA | reference inventory only; not a wired native folder |
 | `brand/whole-mosaic-master-transparent-1024.png` | pack master | 1024×1024 | RGBA | transparent master |
 
 Illustrated wordmark masters kept from the previous brand drop (not in this ZIP):
