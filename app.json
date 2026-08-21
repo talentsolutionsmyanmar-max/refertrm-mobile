@@ -19,7 +19,9 @@
       "package": "com.refertrm.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2A3764"
+        "backgroundImage": "./assets/adaptive-icon-background.png",
+        "backgroundColor": "#2A3764",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png"
       },
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
       "intentFilters": [
