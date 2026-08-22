@@ -8,6 +8,18 @@ export const color = {
   line: "rgba(0,31,63,0.1)",
   bg: "#FFFFFF",
   white: "#FFFFFF",
+  /** Cream/light neutral surfaces (matches web learner #fffdf8 on #f7f5f0). */
+  cream: "#FFFDF8",
+  paper: "#F7F5F0",
+  /** Feedback. Kept muted, brand-adjacent. */
+  correctBg: "rgba(13,148,136,0.12)",
+  correctBorder: "#0D9488",
+  wrongBg: "rgba(185,28,28,0.08)",
+  wrongBorder: "#B91C1C",
+  goldSoftBg: "rgba(154,90,0,0.07)",
+  goldSoftBorder: "rgba(154,90,0,0.18)",
+  goldText: "#9A5A00",
 } as const;
 
-export const tap = 44;
+/** 48dp minimum touch target (WCAG 2.5.5 / Material a11y). */
+export const tap = 48;

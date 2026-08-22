@@ -56,7 +56,20 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={client}>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: "#001F3F" },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: { fontWeight: "700" },
+          headerBackVisible: true,
+        }}
+      >
+        {/* Tab navigator manages its own header. */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Detail routes get a proper Android top app bar with back navigation. */}
+        <Stack.Screen name="jobs/[id]" options={{ title: "Jobs" }} />
+        <Stack.Screen name="learn/[slug]" options={{ title: "Academy" }} />
+      </Stack>
     </QueryClientProvider>
   );
 }

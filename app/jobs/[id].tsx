@@ -1,17 +1,30 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { Link, useLocalSearchParams } from "expo-router";
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { catalog } from "../../src/cache/catalog";
+import { safeHttpsUrl } from "../../src/api/https";
 import { resolveJobField } from "../../src/api/jobField";
 import { loadJob } from "../../src/api/load";
 import { jobTypeLabel } from "../../src/api/project";
-import { Banner, Loading, RetryState } from "../../src/components/ui";
+import { Banner, Card, CardText, EmptyNote, Loading, RetryState } from "../../src/components/ui";
 import { copy, errorMessage } from "../../src/copy/en";
 import { parseRouteSegment } from "../../src/linking/ids";
 import { color, tap } from "../../src/theme";
 
+/** Canonical public job page on the web platform. Keyed by slug (see /jobs list links). */
+function canonicalJobUrl(slug: string | null | undefined, id: string): string | null {
+  const candidate = `https://www.refertrm.com/jobs/${slug && slug.trim() ? slug.trim() : id}`;
+  return safeHttpsUrl(candidate);
+}
+
+function formatMmk(value: number): string {
+  return `${value.toLocaleString("en-US")} MMK`;
+}
+
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const rawId = Array.isArray(id) ? id[0] : id;
   const jobId = parseRouteSegment(rawId);
   const listed = jobId ? catalog.findJob(jobId) : undefined;
@@ -41,112 +54,162 @@ export default function JobDetailScreen() {
   const stale = Boolean(query.data?.fromCache);
   const pendingBody = query.isLoading && !loaded && !cachedBody;
 
-  if (!jobId) {
+  const backFallback = (
+    <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
+      <Stack.Screen options={{ title: copy.nav.jobs, headerBackTitle: copy.nav.jobs }} />
+      <Text style={{ color: color.muted, fontSize: 16, lineHeight: 24 }}>{copy.errors.notFound}</Text>
+      <Link href="/" asChild>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={copy.nav.jobs}
+          style={({ pressed }) => ({ minHeight: tap, justifyContent: "center", opacity: pressed ? 0.7 : 1 })}
+        >
+          <Text style={{ color: color.tealDark, fontWeight: "600", fontSize: 16 }}>{copy.nav.jobs}</Text>
+        </Pressable>
+      </Link>
+    </View>
+  );
+
+  if (!jobId) return backFallback;
+  if (query.isLoading && !meta) {
     return (
-      <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
-        <Text style={{ color: color.muted }}>{copy.errors.notFound}</Text>
-        <Link href="/" asChild>
-          <Pressable style={{ minHeight: tap, justifyContent: "center" }}>
-            <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.jobs}</Text>
-          </Pressable>
-        </Link>
-      </View>
+      <>
+        <Stack.Screen options={{ title: copy.nav.jobs, headerBackTitle: copy.nav.jobs }} />
+        <Loading />
+      </>
     );
   }
-
-  if (query.isLoading && !meta) return <Loading />;
-
-  if (!meta && notFound) {
-    return (
-      <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
-        <Text style={{ color: color.muted }}>{copy.errors.notFound}</Text>
-        <Link href="/" asChild>
-          <Pressable style={{ minHeight: tap, justifyContent: "center" }}>
-            <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.jobs}</Text>
-          </Pressable>
-        </Link>
-      </View>
-    );
-  }
-
+  if (!meta && notFound) return backFallback;
   if (!meta && query.isError) {
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
+        <Stack.Screen options={{ title: copy.nav.jobs, headerBackTitle: copy.nav.jobs }} />
         <RetryState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       </View>
     );
   }
+  if (!meta) return backFallback;
 
-  if (!meta) {
-    return (
-      <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
-        <Text style={{ color: color.muted }}>{copy.errors.notFound}</Text>
-        <Link href="/" asChild>
-          <Pressable style={{ minHeight: tap, justifyContent: "center" }}>
-            <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.jobs}</Text>
-          </Pressable>
-        </Link>
-      </View>
-    );
-  }
+  const typeLabel = jobTypeLabel(meta.type);
+  const applyUrl = canonicalJobUrl(meta.slug, meta.id);
+  const reward = meta.reward && meta.reward > 0 ? formatMmk(meta.reward) : null;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: color.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      {stale ? <Banner text={copy.offline.stale} /> : null}
-      <Link href="/" asChild>
-        <Pressable style={{ minHeight: tap, justifyContent: "center" }}>
-          <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.jobs}</Text>
-        </Pressable>
-      </Link>
-      <Text style={{ color: color.navy, fontSize: 24, fontWeight: "800", marginTop: 8 }}>{meta.title}</Text>
-      <Text style={{ color: color.muted, marginTop: 8 }}>{meta.company?.name}</Text>
-      <Text style={{ color: color.muted, marginTop: 8 }}>
-        {meta.location || copy.jobs.locationUnknown}
-        {" · "}
-        {meta.salaryDisplay || copy.jobs.salaryHidden}
-        {jobTypeLabel(meta.type) ? ` · ${jobTypeLabel(meta.type)}` : ""}
-      </Text>
-      {meta.urgent ? (
-        <Text style={{ color: color.navy, marginTop: 8, fontWeight: "700" }}>{copy.jobs.urgent}</Text>
-      ) : null}
-
-      {description.state === "text" ? (
-        <Text style={{ color: color.navy, marginTop: 24, lineHeight: 24 }}>{description.text}</Text>
-      ) : description.state === "empty" ? (
-        <Text style={{ color: color.muted, marginTop: 24 }}>{copy.jobs.descriptionEmpty}</Text>
-      ) : pendingBody ? null : (
-        <View style={{ marginTop: 24 }}>
-          <RetryState message={copy.jobs.descriptionOffline} onRetry={() => void query.refetch()} />
-        </View>
-      )}
-
-      {requirements.state === "text" ? (
-        <View style={{ marginTop: 24 }}>
-          <Text style={{ color: color.navy, fontWeight: "700" }}>{copy.jobs.requirements}</Text>
-          <Text style={{ color: color.navy, marginTop: 8, lineHeight: 24 }}>{requirements.text}</Text>
-        </View>
-      ) : pendingBody && requirements.state === "unavailable" ? null : requirements.state === "unavailable" ? (
-        <View style={{ marginTop: 24 }}>
-          <Text style={{ color: color.navy, fontWeight: "700" }}>{copy.jobs.requirements}</Text>
-          <RetryState message={copy.jobs.requirementsOffline} onRetry={() => void query.refetch()} />
-        </View>
-      ) : (
-        <View style={{ marginTop: 24 }}>
-          <Text style={{ color: color.navy, fontWeight: "700" }}>{copy.jobs.requirements}</Text>
-          <Text style={{ color: color.muted, marginTop: 8 }}>{copy.jobs.requirementsEmpty}</Text>
-        </View>
-      )}
-
-      <View
-        style={{
-          marginTop: 28,
-          padding: 12,
-          borderRadius: 8,
-          backgroundColor: "rgba(0,31,63,0.04)",
+    <>
+      <Stack.Screen
+        options={{
+          title: meta.title,
+          headerBackTitle: copy.nav.jobs,
+          headerStyle: { backgroundColor: color.navy },
+          headerTintColor: color.white,
+          headerTitleStyle: { fontWeight: "700" },
+        }}
+      />
+      <ScrollView
+        style={{ flex: 1, backgroundColor: color.paper }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 32 + insets.bottom,
+          gap: 16,
         }}
       >
-        <Text style={{ color: color.muted, lineHeight: 20 }}>{copy.jobs.applyUnavailable}</Text>
-      </View>
-    </ScrollView>
+        {stale ? <Banner text={copy.offline.stale} /> : null}
+
+        {/* Branded job summary surface */}
+        <View
+          style={{
+            borderRadius: 12,
+            backgroundColor: color.navy,
+            padding: 20,
+            gap: 8,
+          }}
+        >
+          {meta.urgent ? (
+            <Text style={{ color: color.gold, fontWeight: "700", fontSize: 12, letterSpacing: 1.4, textTransform: "uppercase" }}>
+              {copy.jobs.urgent}
+            </Text>
+          ) : null}
+          <Text
+            style={{ color: color.white, fontSize: 24, fontWeight: "800", lineHeight: 31 }}
+            accessibilityRole="header"
+          >
+            {meta.title}
+          </Text>
+          {meta.company?.name ? (
+            <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 16, fontWeight: "600" }}>
+              {meta.company.name}
+            </Text>
+          ) : null}
+          <View style={{ height: 1, backgroundColor: "rgba(212,175,55,0.35)", marginVertical: 4 }} />
+          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 16, lineHeight: 24 }}>
+            {meta.location || copy.jobs.locationUnknown}
+          </Text>
+          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 16, lineHeight: 24 }}>
+            {meta.salaryDisplay || copy.jobs.salaryHidden}
+            {typeLabel ? ` · ${typeLabel}` : ""}
+          </Text>
+          {reward ? (
+            <Text style={{ color: color.gold, fontSize: 15, fontWeight: "700", lineHeight: 22 }}>
+              {copy.jobs.referralReward(reward)}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* About this role */}
+        <Card label={copy.jobs.aboutRole}>
+          {description.state === "text" ? (
+            <CardText text={description.text!} />
+          ) : description.state === "empty" ? (
+            <EmptyNote text={copy.jobs.descriptionEmpty} />
+          ) : pendingBody ? null : (
+            <RetryState message={copy.jobs.descriptionOffline} onRetry={() => void query.refetch()} />
+          )}
+        </Card>
+
+        {/* Requirements */}
+        <Card label={copy.jobs.requirements}>
+          {requirements.state === "text" ? (
+            <CardText text={requirements.text!} />
+          ) : pendingBody && requirements.state === "unavailable" ? null : requirements.state === "unavailable" ? (
+            <RetryState message={copy.jobs.requirementsOffline} onRetry={() => void query.refetch()} />
+          ) : (
+            <EmptyNote text={copy.jobs.requirementsEmpty} />
+          )}
+        </Card>
+
+        {/* Primary action — opens the canonical web job page */}
+        {applyUrl ? (
+          <Pressable
+            onPress={() => void Linking.openURL(applyUrl)}
+            accessibilityRole="link"
+            accessibilityLabel={copy.jobs.applyOnline}
+            style={({ pressed }) => ({
+              minHeight: tap,
+              borderRadius: 10,
+              backgroundColor: color.teal,
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 20,
+              paddingVertical: 14,
+              opacity: pressed ? 0.85 : 1,
+              marginTop: 4,
+            })}
+          >
+            <Text style={{ color: color.white, fontWeight: "700", fontSize: 16 }}>{copy.jobs.applyOnline}</Text>
+          </Pressable>
+        ) : (
+          <View
+            style={{
+              padding: 16,
+              borderRadius: 10,
+              backgroundColor: "rgba(0,31,63,0.04)",
+            }}
+          >
+            <Text style={{ color: color.muted, fontSize: 15, lineHeight: 22 }}>{copy.jobs.applyUnavailable}</Text>
+          </View>
+        )}
+      </ScrollView>
+    </>
   );
 }
