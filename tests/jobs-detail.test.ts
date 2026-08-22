@@ -340,3 +340,121 @@ test("persisted job-body recency is used after rehydrate", () => {
   assert.equal(order.at(-1), "Z");
   assert.equal(order.length, MAX_JOB_BODIES);
 });
+
+type Pending = { url: string; resolve: (value: Response) => void; reject: (error: unknown) => void };
+
+function hangingFetch(pending: Pending[]) {
+  return ((input: string | URL | Request) =>
+    new Promise<Response>((resolve, reject) => {
+      pending.push({ url: String(input), resolve, reject });
+    })) as typeof fetch;
+}
+
+async function waitForPending(pending: Pending[], count: number): Promise<void> {
+  for (let i = 0; i < 20 && pending.length < count; i += 1) await Promise.resolve();
+  assert.equal(pending.length, count);
+}
+
+const CANONICAL_ID = "cd69a2ce-61c5-4c4a-a656-7ceb49eed091";
+const CANONICAL_SLUG = "makro-basic-staff-butchery";
+
+function aliasDetail(description: string | null) {
+  return { job: detailJob({ id: CANONICAL_ID, slug: CANONICAL_SLUG, description }) };
+}
+
+test("older slug cannot overwrite newer UUID canonical body", async (t) => {
+  resetMemoryKv();
+  resetGenerations();
+  const pending: Pending[] = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = hangingFetch(pending);
+  t.after(() => {
+    globalThis.fetch = original;
+    resetMemoryKv();
+    resetGenerations();
+  });
+
+  const older = loadJob(CANONICAL_SLUG);
+  const newer = loadJob(CANONICAL_ID);
+  await waitForPending(pending, 2);
+  pending[1]!.resolve(new Response(JSON.stringify(aliasDetail("newer")), { status: 200 }));
+  const newerResult = await newer;
+  assert.equal(newerResult.job.description, "newer");
+  assert.equal(catalog.findJobBody(CANONICAL_ID)?.description, "newer");
+  pending[0]!.resolve(new Response(JSON.stringify(aliasDetail("older")), { status: 200 }));
+  const olderResult = await older;
+  assert.equal(catalog.findJobBody(CANONICAL_ID)?.description, "newer");
+  assert.equal(olderResult.job.description, "newer");
+});
+
+test("older UUID cannot overwrite newer slug canonical body", async (t) => {
+  resetMemoryKv();
+  resetGenerations();
+  const pending: Pending[] = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = hangingFetch(pending);
+  t.after(() => {
+    globalThis.fetch = original;
+    resetMemoryKv();
+    resetGenerations();
+  });
+
+  const older = loadJob(CANONICAL_ID);
+  const newer = loadJob(CANONICAL_SLUG);
+  await waitForPending(pending, 2);
+  pending[1]!.resolve(new Response(JSON.stringify(aliasDetail("newer")), { status: 200 }));
+  await newer;
+  assert.equal(catalog.findJobBody(CANONICAL_ID)?.description, "newer");
+  pending[0]!.resolve(new Response(JSON.stringify(aliasDetail("older")), { status: 200 }));
+  const olderResult = await older;
+  assert.equal(catalog.findJobBody(CANONICAL_ID)?.description, "newer");
+  assert.equal(olderResult.job.description, "newer");
+});
+
+test("newer failed alias does not block older valid canonical success", async (t) => {
+  resetMemoryKv();
+  resetGenerations();
+  const pending: Pending[] = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = hangingFetch(pending);
+  t.after(() => {
+    globalThis.fetch = original;
+    resetMemoryKv();
+    resetGenerations();
+  });
+
+  const older = loadJob(CANONICAL_SLUG);
+  const newer = loadJob(CANONICAL_ID);
+  await waitForPending(pending, 2);
+  pending[1]!.resolve(new Response("down", { status: 500 }));
+  await assert.rejects(newer);
+  assert.equal(catalog.findJobBody(CANONICAL_ID), undefined);
+  pending[0]!.resolve(new Response(JSON.stringify(aliasDetail("older")), { status: 200 }));
+  const olderResult = await older;
+  assert.equal(olderResult.fromCache, false);
+  assert.equal(olderResult.job.description, "older");
+  assert.equal(catalog.findJobBody(CANONICAL_ID)?.description, "older");
+});
+
+test("newer honest-null canonical success is not overwritten by older alias body", async (t) => {
+  resetMemoryKv();
+  resetGenerations();
+  const pending: Pending[] = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = hangingFetch(pending);
+  t.after(() => {
+    globalThis.fetch = original;
+    resetMemoryKv();
+    resetGenerations();
+  });
+
+  const older = loadJob(CANONICAL_SLUG);
+  const newer = loadJob(CANONICAL_ID);
+  await waitForPending(pending, 2);
+  pending[1]!.resolve(new Response(JSON.stringify(aliasDetail(null)), { status: 200 }));
+  await newer;
+  assert.equal(catalog.findJobBody(CANONICAL_ID)?.description, null);
+  pending[0]!.resolve(new Response(JSON.stringify(aliasDetail("older")), { status: 200 }));
+  await older;
+  assert.equal(catalog.findJobBody(CANONICAL_ID)?.description, null);
+});

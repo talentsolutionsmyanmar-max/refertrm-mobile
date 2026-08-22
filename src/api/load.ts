@@ -1,5 +1,5 @@
 import { catalog } from "../cache/catalog";
-import { academyGeneration, jobDetailGeneration, jobsGeneration, moduleGeneration } from "../cache/generation";
+import { academyGeneration, jobCanonicalCommit, jobDetailGeneration, jobsGeneration, moduleGeneration } from "../cache/generation";
 import { fetchAcademy, fetchJob, fetchJobs, fetchModule } from "./client";
 import {
   MalformedResponseError,
@@ -108,6 +108,7 @@ export async function loadJobs(signal?: AbortSignal): Promise<JobsLoad> {
 
 export async function loadJob(id: string, signal?: AbortSignal): Promise<JobDetailLoad> {
   const ticket = jobDetailGeneration.issue(id);
+  const ordinal = jobCanonicalCommit.issue();
   const cachedBody = catalog.findJobBody(id);
   const cachedMeta = catalog.findJob(id);
   try {
@@ -118,7 +119,12 @@ export async function loadJob(id: string, signal?: AbortSignal): Promise<JobDeta
     if (!isPublicJob(job)) throw new Error("unpublished");
     throwIfAborted(signal);
     if (!jobDetailGeneration.apply(id, ticket)) {
-      const latest = catalog.findJobBody(id) ?? catalog.findJobBody(job.id);
+      const latest = catalog.findJobBody(job.id) ?? catalog.findJobBody(id);
+      if (latest) return { job: composeJob(catalog.findJob(job.id) ?? cachedMeta, latest, job), fromCache: true };
+      return { job, fromCache: false };
+    }
+    if (!jobCanonicalCommit.commit(job.id, ordinal)) {
+      const latest = catalog.findJobBody(job.id) ?? catalog.findJobBody(id);
       if (latest) return { job: composeJob(catalog.findJob(job.id) ?? cachedMeta, latest, job), fromCache: true };
       return { job, fromCache: false };
     }
