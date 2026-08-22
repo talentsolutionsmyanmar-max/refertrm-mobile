@@ -1,11 +1,15 @@
 import type { AcademyModuleDetail, AcademyModuleListItem, Job } from "./types";
 
+type PublicJobLike = Pick<Job, "id" | "title" | "slug" | "status"> & {
+  company?: Job["company"];
+};
+
 /**
  * Fail closed. Only explicit case-insensitive status === "active" is public.
  * Missing/null/empty/unknown status is rejected. Demo/test tenants are rejected.
  * A legitimate live row may omit tenantEnvironment.
  */
-export function isPublicJob(job: Job): boolean {
+export function isPublicJob(job: PublicJobLike): boolean {
   if (typeof job.status !== "string") return false;
   if (job.status.trim().toLowerCase() !== "active") return false;
 
@@ -27,9 +31,9 @@ export function isPublicJob(job: Job): boolean {
   return true;
 }
 
-export function sanitizeJobs(jobs: Job[]): Job[] {
+export function sanitizeJobs<T extends PublicJobLike>(jobs: T[]): T[] {
   const seen = new Set<string>();
-  const out: Job[] = [];
+  const out: T[] = [];
   for (const job of jobs) {
     if (!isPublicJob(job)) continue;
     if (seen.has(job.id)) continue;

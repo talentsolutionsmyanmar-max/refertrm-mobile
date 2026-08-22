@@ -53,9 +53,11 @@ export function createKeyedGeneration(): KeyedGeneration {
 export const jobsGeneration = createGeneration();
 export const academyGeneration = createGeneration();
 export const moduleGeneration = createKeyedGeneration();
+export const jobDetailGeneration = createKeyedGeneration();
 
 export function resetGenerations(): void {
   jobsGeneration.reset();
   academyGeneration.reset();
   moduleGeneration.reset();
+  jobDetailGeneration.reset();
 }

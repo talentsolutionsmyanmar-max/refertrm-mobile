@@ -3,7 +3,7 @@ import test from "node:test";
 import { sanitizeJobs, sanitizeModules } from "../src/api/sanitize.ts";
 
 test("live public jobs and academy respond with arrays", async () => {
-  const jobsRes = await fetch("https://www.refertrm.com/api/jobs?status=active&limit=500", {
+  const jobsRes = await fetch("https://www.refertrm.com/api/jobs?status=active&limit=500&view=summary", {
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(25_000),
   });

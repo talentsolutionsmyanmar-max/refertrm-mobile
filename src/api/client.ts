@@ -69,6 +69,12 @@ export function fetchJobs(signal?: AbortSignal): Promise<unknown> {
   return getJson(`${endpoints.jobs}?${JOBS_LIST_QUERY}`, signal);
 }
 
+export function fetchJob(id: string, signal?: AbortSignal): Promise<unknown> {
+  const safe = parseRouteSegment(id);
+  if (!safe) return Promise.reject(new Error("invalid_id"));
+  return getJson(endpoints.job(encodeURIComponent(safe)), signal);
+}
+
 export function fetchAcademy(signal?: AbortSignal): Promise<unknown> {
   return getJson(endpoints.academyPublic, signal);
 }

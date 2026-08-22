@@ -1,4 +1,4 @@
-import type { AcademyModuleDetail, AcademyModuleListItem, Job, JobCompany, Json } from "./types";
+import type { AcademyModuleDetail, AcademyModuleListItem, Job, JobCompany, JobListItem, Json } from "./types";
 
 export class MalformedResponseError extends Error {
   constructor(message: string) {
@@ -117,18 +117,84 @@ function rejectAllDropped(inputLength: number, kept: number, kind: string): void
   if (inputLength > 0 && kept === 0) throw new MalformedResponseError(`${kind}_all_malformed`);
 }
 
-export function parseJobsEnvelope(raw: unknown): Job[] {
+function asStrictBoolean(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
+}
+
+function nonemptyText(value: unknown): boolean {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function malformedSummaryBody(rec: Record<string, unknown>): boolean {
+  for (const key of ["description", "descriptionMm", "requirements", "recruiterBrief"] as const) {
+    if (!Object.prototype.hasOwnProperty.call(rec, key)) continue;
+    const value = rec[key];
+    if (value === null || value === undefined) continue;
+    if (typeof value !== "string") return true;
+  }
+  return false;
+}
+
+function flagOrInfer(rec: Record<string, unknown>, key: string, inferred: boolean): boolean | null {
+  if (!Object.prototype.hasOwnProperty.call(rec, key)) return inferred;
+  return asStrictBoolean(rec[key]);
+}
+
+export function parseJobSummaryRecord(raw: unknown): JobListItem | null {
+  const rec = asRecord(raw);
+  if (!rec) return null;
+  if (malformedSummaryBody(rec)) return null;
+  const job = parseJobRecord(rec);
+  if (!job) return null;
+  const hasDescription = flagOrInfer(rec, "hasDescription", nonemptyText(rec.description));
+  const hasRequirements = flagOrInfer(rec, "hasRequirements", nonemptyText(rec.requirements));
+  if (hasDescription === null || hasRequirements === null) return null;
+  return {
+    id: job.id,
+    title: job.title,
+    slug: job.slug,
+    companyId: job.companyId,
+    location: job.location,
+    salaryDisplay: job.salaryDisplay,
+    salaryMin: job.salaryMin,
+    salaryMax: job.salaryMax,
+    type: job.type,
+    level: job.level,
+    skills: job.skills,
+    urgent: job.urgent,
+    featured: job.featured,
+    postedAt: job.postedAt,
+    createdAt: job.createdAt,
+    status: job.status,
+    company: job.company,
+    _count: job._count,
+    hasDescription,
+    hasRequirements,
+  };
+}
+
+export function parseJobsEnvelope(raw: unknown): JobListItem[] {
   const rec = asRecord(raw);
   if (!rec) throw new MalformedResponseError("jobs_envelope");
   if (!Object.prototype.hasOwnProperty.call(rec, "jobs")) throw new MalformedResponseError("jobs_missing");
   if (!Array.isArray(rec.jobs)) throw new MalformedResponseError("jobs_array");
-  const out: Job[] = [];
+  const out: JobListItem[] = [];
   for (const row of rec.jobs) {
-    const job = parseJobRecord(row);
+    const job = parseJobSummaryRecord(row);
     if (job) out.push(job);
   }
   rejectAllDropped(rec.jobs.length, out.length, "jobs");
   return out;
+}
+
+export function parseJobDetailEnvelope(raw: unknown): Job {
+  const rec = asRecord(raw);
+  if (!rec || !Object.prototype.hasOwnProperty.call(rec, "job")) {
+    throw new MalformedResponseError("job_envelope");
+  }
+  const job = parseJobRecord(rec.job);
+  if (!job) throw new MalformedResponseError("job_body");
+  return job;
 }
 
 export function parseModuleListItem(raw: unknown): AcademyModuleListItem | null {

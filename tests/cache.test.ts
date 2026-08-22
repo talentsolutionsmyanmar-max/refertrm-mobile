@@ -78,8 +78,10 @@ test("failed refresh keeps cached jobs and academy", async (t) => {
   const firstAcademy = await loadAcademy();
   assert.equal(firstJobs.fromCache, false);
   assert.equal(firstJobs.jobs.length, 1);
+  assert.equal(firstJobs.jobs[0]?.hasDescription, true);
+  assert.equal("description" in firstJobs.jobs[0]!, false);
   assert.equal(firstAcademy.modules.length, 1);
-  catalog.writeJobBody(firstJobs.jobs[0]!);
+  catalog.writeJobBody({ id: "1", description: "body-1", requirements: "req" });
 
   mode = "fail";
   const secondJobs = await loadJobs();

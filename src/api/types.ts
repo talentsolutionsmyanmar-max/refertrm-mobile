@@ -76,9 +76,14 @@ export type JobListItem = Pick<
   | "status"
   | "company"
   | "_count"
->;
+> & {
+  hasDescription: boolean;
+  hasRequirements: boolean;
+};
 
-export type JobsResponse = { jobs: Job[] };
+export type JobsResponse = { jobs: JobListItem[] };
+
+export type JobDetailResponse = { job: Job };
 
 /** Catalogue row from GET /api/academy/public */
 export type AcademyModuleListItem = {

@@ -1,10 +1,10 @@
 import { getKv } from "../storage/kv";
-import { toListItem } from "../api/project";
+import { toListItem, usefulJobBody } from "../api/project";
 import type { AcademyModuleDetail, AcademyModuleListItem, Job, JobListItem } from "../api/types";
 
-const KEY = "refertrm.p1.catalog.v1";
-const MAX_JOB_BODIES = 25;
-const MAX_MODULE_BODIES = 15;
+export const CATALOG_KEY = "refertrm.p1.catalog.v1";
+export const MAX_JOB_BODIES = 25;
+export const MAX_MODULE_BODIES = 15;
 
 export type JobBody = {
   description: string | null;
@@ -33,31 +33,6 @@ const empty = (): CatalogSnapshot => ({
   academySyncedAt: null,
 });
 
-function read(): CatalogSnapshot {
-  const raw = getKv().getString(KEY);
-  if (!raw) return empty();
-  try {
-    const parsed = JSON.parse(raw) as CatalogSnapshot;
-    return {
-      ...empty(),
-      ...parsed,
-      jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
-      jobBodies: parsed.jobBodies ?? {},
-      jobBodyOrder: parsed.jobBodyOrder ?? [],
-      modules: Array.isArray(parsed.modules) ? parsed.modules : [],
-      moduleBodies: parsed.moduleBodies ?? {},
-      moduleBodyOrder: parsed.moduleBodyOrder ?? [],
-    };
-  } catch {
-    return empty();
-  }
-}
-
-function write(next: CatalogSnapshot): CatalogSnapshot {
-  getKv().set(KEY, JSON.stringify(next));
-  return next;
-}
-
 function lruSet<T>(
   map: Record<string, T>,
   order: string[],
@@ -74,17 +49,83 @@ function lruSet<T>(
   return { map: nextMap, order: nextOrder };
 }
 
+function migrateJobs(
+  rawJobs: unknown[],
+  jobBodies: Record<string, JobBody>,
+  jobBodyOrder: string[],
+): { jobs: JobListItem[]; jobBodies: Record<string, JobBody>; jobBodyOrder: string[] } {
+  let bodies = { ...jobBodies };
+  let order = [...jobBodyOrder];
+  const jobs: JobListItem[] = [];
+  for (const row of rawJobs) {
+    if (!row || typeof row !== "object") continue;
+    const rec = row as JobListItem & { description?: string | null; requirements?: string | null };
+    if (!rec.id || !rec.title || !rec.slug) continue;
+    const legacy = usefulJobBody(rec);
+    if (legacy && !bodies[rec.id]) {
+      const stored = lruSet(bodies, order, rec.id, legacy, MAX_JOB_BODIES);
+      bodies = stored.map;
+      order = stored.order;
+    }
+    jobs.push(toListItem(rec));
+  }
+  return { jobs, jobBodies: bodies, jobBodyOrder: order };
+}
+
+function read(): CatalogSnapshot {
+  const raw = getKv().getString(CATALOG_KEY);
+  if (!raw) return empty();
+  try {
+    const parsed = JSON.parse(raw) as CatalogSnapshot;
+    const migrated = migrateJobs(
+      Array.isArray(parsed.jobs) ? parsed.jobs : [],
+      parsed.jobBodies ?? {},
+      parsed.jobBodyOrder ?? [],
+    );
+    return {
+      ...empty(),
+      ...parsed,
+      jobs: migrated.jobs,
+      jobBodies: migrated.jobBodies,
+      jobBodyOrder: migrated.jobBodyOrder,
+      modules: Array.isArray(parsed.modules) ? parsed.modules : [],
+      moduleBodies: parsed.moduleBodies ?? {},
+      moduleBodyOrder: parsed.moduleBodyOrder ?? [],
+    };
+  } catch {
+    return empty();
+  }
+}
+
+function write(next: CatalogSnapshot): CatalogSnapshot {
+  getKv().set(CATALOG_KEY, JSON.stringify(next));
+  return next;
+}
+
 export const catalog = {
   snapshot: read,
-  writeJobs(jobs: Job[]): CatalogSnapshot {
+  writeJobs(jobs: Array<Job | JobListItem>): CatalogSnapshot {
     const current = read();
+    let bodies = current.jobBodies;
+    let order = current.jobBodyOrder;
+    const list = jobs.map((job) => {
+      const legacy = usefulJobBody(job);
+      if (legacy && !bodies[job.id]) {
+        const stored = lruSet(bodies, order, job.id, legacy, MAX_JOB_BODIES);
+        bodies = stored.map;
+        order = stored.order;
+      }
+      return toListItem(job);
+    });
     return write({
       ...current,
-      jobs: jobs.map(toListItem),
+      jobs: list,
+      jobBodies: bodies,
+      jobBodyOrder: order,
       jobsSyncedAt: Date.now(),
     });
   },
-  writeJobBody(job: Job): CatalogSnapshot {
+  writeJobBody(job: Pick<Job, "id" | "description" | "requirements">): CatalogSnapshot {
     const current = read();
     const body: JobBody = {
       description: job.description,
