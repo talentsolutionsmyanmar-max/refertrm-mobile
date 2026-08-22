@@ -1,3 +1,5 @@
+export const REQUEST_TIMEOUT_MS = 20_000;
+
 export class AbortedError extends Error {
   constructor() {
     super("aborted");
@@ -16,17 +18,47 @@ export function isAbortError(error: unknown): boolean {
   );
 }
 
-export function mergeSignals(user?: AbortSignal): AbortSignal {
-  const timeout = AbortSignal.timeout(20_000);
-  if (!user) return timeout;
-  if (typeof AbortSignal.any === "function") return AbortSignal.any([user, timeout]);
+export type ManagedSignal = {
+  signal: AbortSignal;
+  cleanup: () => void;
+};
+
+/** RN 0.81.5 abort-controller 3.0.0 has no static timeout() or any(). */
+export function createRequestSignal(
+  user?: AbortSignal,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): ManagedSignal {
   const controller = new AbortController();
-  const abort = () => controller.abort();
-  if (user.aborted || timeout.aborted) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let cleaned = false;
+
+  const onUserAbort = () => {
     controller.abort();
-    return controller.signal;
+  };
+
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      timer = undefined;
+    }
+    user?.removeEventListener("abort", onUserAbort);
+  };
+
+  if (user?.aborted) {
+    controller.abort();
+    return { signal: controller.signal, cleanup };
   }
-  user.addEventListener("abort", abort, { once: true });
-  timeout.addEventListener("abort", abort, { once: true });
-  return controller.signal;
+
+  if (user) {
+    user.addEventListener("abort", onUserAbort);
+  }
+
+  timer = setTimeout(() => {
+    timer = undefined;
+    controller.abort();
+  }, timeoutMs);
+
+  return { signal: controller.signal, cleanup };
 }

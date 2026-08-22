@@ -1,7 +1,7 @@
 import { parseRouteSegment } from "../linking/ids";
 import { getAccessToken } from "../auth/session";
 import { endpoints, JOBS_LIST_QUERY } from "./endpoints";
-import { mergeSignals, throwIfAborted } from "./signal";
+import { createRequestSignal, REQUEST_TIMEOUT_MS, throwIfAborted } from "./signal";
 
 function headers(): HeadersInit {
   const token = getAccessToken();
@@ -10,15 +10,24 @@ function headers(): HeadersInit {
   return base;
 }
 
-export async function getJson(url: string, signal?: AbortSignal): Promise<unknown> {
+export async function getJson(
+  url: string,
+  signal?: AbortSignal,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): Promise<unknown> {
   throwIfAborted(signal);
-  const res = await fetch(url, {
-    headers: headers(),
-    signal: mergeSignals(signal),
-  });
-  throwIfAborted(signal);
-  if (!res.ok) throw new Error(`refertrm_${res.status}`);
-  return await res.json();
+  const request = createRequestSignal(signal, timeoutMs);
+  try {
+    const res = await fetch(url, {
+      headers: headers(),
+      signal: request.signal,
+    });
+    throwIfAborted(signal);
+    if (!res.ok) throw new Error(`refertrm_${res.status}`);
+    return await res.json();
+  } finally {
+    request.cleanup();
+  }
 }
 
 export function fetchJobs(signal?: AbortSignal): Promise<unknown> {
