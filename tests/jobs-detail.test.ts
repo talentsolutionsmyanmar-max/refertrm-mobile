@@ -281,3 +281,62 @@ test("fetchJobs uses the summary query and fetchJob uses the detail path", async
   assert.equal(urls[0], `${endpoints.jobs}?${JOBS_LIST_QUERY}`);
   assert.equal(urls[1], `${endpoints.job(encodeURIComponent("abc-123"))}`);
 });
+
+test("true LRU promotes successful reads including honest-null bodies", () => {
+  resetMemoryKv();
+  const letters = [..."ABCDEFGHIJKLMNOPQRSTUVWXY"];
+  for (const id of letters) {
+    catalog.writeJobBody({ id, description: `body-${id}`, requirements: "req" });
+  }
+  assert.deepEqual(catalog.snapshot().jobBodyOrder, letters);
+
+  assert.equal(catalog.findJobBody("A")?.description, "body-A");
+  assert.equal(catalog.snapshot().jobBodyOrder.at(-1), "A");
+  assert.equal(catalog.snapshot().jobBodyOrder[0], "B");
+
+  catalog.writeJobBody({ id: "Z", description: "body-Z", requirements: "req" });
+  const afterZ = catalog.snapshot().jobBodyOrder;
+  assert.equal(afterZ.includes("B"), false);
+  assert.equal(afterZ.includes("A"), true);
+  assert.equal(catalog.findJobBody("B"), undefined);
+  assert.deepEqual(catalog.snapshot().jobBodyOrder, afterZ);
+  assert.equal(afterZ.at(-1), "Z");
+  assert.equal(afterZ.length, MAX_JOB_BODIES);
+  assert.equal(catalog.findJobBody("A")?.description, "body-A");
+
+  const orderAfterPromoteA = [...catalog.snapshot().jobBodyOrder];
+  assert.equal(catalog.findJobBody("missing"), undefined);
+  assert.deepEqual(catalog.snapshot().jobBodyOrder, orderAfterPromoteA);
+
+  catalog.writeJobBody({ id: "C", description: "updated-C", requirements: "req" });
+  assert.equal(catalog.snapshot().jobBodyOrder.at(-1), "C");
+  assert.equal(catalog.findJobBody("C")?.description, "updated-C");
+
+  catalog.writeJobBody({ id: "D", description: null, requirements: null });
+  catalog.writeJobBody({ id: "C", description: "updated-C", requirements: "req" });
+  assert.equal(catalog.snapshot().jobBodyOrder.at(-1), "C");
+  assert.equal(catalog.findJobBody("D")?.description, null);
+  assert.equal(catalog.snapshot().jobBodyOrder.at(-1), "D");
+});
+
+test("persisted job-body recency is used after rehydrate", () => {
+  resetMemoryKv();
+  const letters = [..."ABCDEFGHIJKLMNOPQRSTUVWXY"];
+  for (const id of letters) {
+    catalog.writeJobBody({ id, description: `body-${id}`, requirements: "req" });
+  }
+  assert.equal(catalog.findJobBody("A")?.description, "body-A");
+  const persisted = getKv().getString(CATALOG_KEY);
+  assert.ok(persisted);
+
+  resetMemoryKv();
+  getKv().set(CATALOG_KEY, persisted!);
+  catalog.writeJobBody({ id: "Z", description: "body-Z", requirements: "req" });
+  const order = catalog.snapshot().jobBodyOrder;
+  assert.equal(order.includes("B"), false);
+  assert.equal(order.includes("A"), true);
+  assert.equal(catalog.findJobBody("A")?.description, "body-A");
+  assert.equal(catalog.findJobBody("B"), undefined);
+  assert.equal(order.at(-1), "Z");
+  assert.equal(order.length, MAX_JOB_BODIES);
+});

@@ -160,9 +160,21 @@ export const catalog = {
   },
   findJobBody(id: string): JobBody | undefined {
     const snap = read();
-    if (snap.jobBodies[id]) return snap.jobBodies[id];
-    const meta = snap.jobs.find((job) => job.id === id || job.slug === id);
-    return meta ? snap.jobBodies[meta.id] : undefined;
+    const direct = Object.prototype.hasOwnProperty.call(snap.jobBodies, id) ? id : undefined;
+    const meta = direct ? undefined : snap.jobs.find((job) => job.id === id || job.slug === id);
+    const key = direct ?? (meta && Object.prototype.hasOwnProperty.call(snap.jobBodies, meta.id) ? meta.id : undefined);
+    if (!key) return undefined;
+    const body = snap.jobBodies[key];
+    if (!body) return undefined;
+    if (snap.jobBodyOrder[snap.jobBodyOrder.length - 1] !== key) {
+      const stored = lruSet(snap.jobBodies, snap.jobBodyOrder, key, body, MAX_JOB_BODIES);
+      write({
+        ...snap,
+        jobBodies: stored.map,
+        jobBodyOrder: stored.order,
+      });
+    }
+    return body;
   },
   findModule(idOrSlug: string): AcademyModuleListItem | undefined {
     return read().modules.find((mod) => mod.id === idOrSlug || mod.slug === idOrSlug);
