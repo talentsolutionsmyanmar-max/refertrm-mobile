@@ -8,7 +8,7 @@ This GitHub repo is the Expo source. EAS project id: `cae45fbe-c884-406f-929d-14
 
 ## Play Store
 
-Not ready for final submission. The launcher icon uses the complete illustrated TRM wordmark and is unreadable at ~48dp. That is an unresolved brand decision, not a technical failure. See [assets/README.md](assets/README.md).
+Not submitted from this lane. Launcher and adaptive icons now use **Direction 1 — Whole Mosaic**, approved by KoKo. The complete illustrated TRM is the production mark. See [assets/README.md](assets/README.md).
 
 ## Stack
 
@@ -27,6 +27,8 @@ Never hardcode. Render live `jobs.length` and `modules.length`.
 ## Run
 
 ```
+npm test
+npm run typecheck
 npx expo start
 ```
 

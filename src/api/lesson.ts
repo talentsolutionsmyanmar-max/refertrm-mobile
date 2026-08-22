@@ -1,3 +1,4 @@
+import { asPlainText } from "./text";
 import type { AcademyModuleDetail } from "./types";
 
 export type LessonBlock = {
@@ -14,15 +15,15 @@ export function parseLessonBlocks(raw: unknown): LessonBlock[] {
     try {
       value = JSON.parse(trimmed);
     } catch {
-      return [{ type: "text", content: raw }];
+      return [{ type: "text", content: asPlainText(raw) }];
     }
   }
   if (!Array.isArray(value)) return [];
   return value.flatMap((block) => {
     if (!block || typeof block !== "object") return [];
     const rec = block as Record<string, unknown>;
-    const content = typeof rec.content === "string" ? rec.content : "";
-    const title = typeof rec.title === "string" ? rec.title : undefined;
+    const content = typeof rec.content === "string" ? asPlainText(rec.content) : "";
+    const title = typeof rec.title === "string" ? asPlainText(rec.title) : undefined;
     const type = typeof rec.type === "string" ? rec.type : "text";
     return [{ type, title, content }];
   });
@@ -32,12 +33,18 @@ export function hasMmBody(detail: Pick<AcademyModuleDetail, "contentMm">): boole
   return parseLessonBlocks(detail.contentMm).some((b) => (b.content ?? "").trim().length > 0);
 }
 
-/** Hide the toggle unless catalogue AND body flags AND a non-empty Myanmar body. */
+/**
+ * Toggle only when a Myanmar body exists.
+ * Catalogue mmReady (when known) AND detail mmContentReady must both be true.
+ * Direct deep links without catalogue use mmContentReady + body only.
+ */
 export function showMmToggle(
-  catalogMmReady: boolean,
+  catalogMmReady: boolean | undefined,
   detail: AcademyModuleDetail,
 ): boolean {
-  return catalogMmReady && Boolean(detail.mmContentReady) && hasMmBody(detail);
+  if (!hasMmBody(detail) || !detail.mmContentReady) return false;
+  if (catalogMmReady === false) return false;
+  return true;
 }
 
 export type QuizItem = {
@@ -46,13 +53,23 @@ export type QuizItem = {
 };
 
 export function parseQuiz(raw: unknown): QuizItem[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.flatMap((item) => {
+  let value: unknown = raw;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    try {
+      value = JSON.parse(trimmed);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const rec = item as Record<string, unknown>;
-    const question = typeof rec.question === "string" ? rec.question : "";
+    const question = typeof rec.question === "string" ? asPlainText(rec.question) : "";
     const options = Array.isArray(rec.options)
-      ? rec.options.filter((o): o is string => typeof o === "string")
+      ? rec.options.filter((o): o is string => typeof o === "string").map(asPlainText)
       : [];
     if (!question || options.length === 0) return [];
     return [{ question, options }];
