@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { filterModules, uniqueCategories } from "../../src/api/filter";
 import { loadAcademy } from "../../src/api/load";
 import { Banner, Chip, Loading, RetryState } from "../../src/components/ui";
-import { copy } from "../../src/copy/en";
+import { copy, errorMessage } from "../../src/copy/en";
 import { useOnline } from "../../src/hooks/useOnline";
 import { color, tap } from "../../src/theme";
 
@@ -49,39 +49,38 @@ export default function AcademyScreen() {
             color: color.navy,
           }}
         />
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-          <Chip
-            active={category === "all" && !mmOnly}
-            label={copy.academy.allTopics}
-            onPress={() => {
-              setCategory("all");
-              setMmOnly(false);
-            }}
-          />
-          {mmReadyCount > 0 ? (
-            <Chip
-              active={mmOnly}
-              label={copy.academy.myanmarAvailable}
-              onPress={() => setMmOnly((value) => !value)}
-            />
-          ) : null}
-          {categories.map((cat) => (
-            <Chip
-              key={cat}
-              active={category === cat}
-              label={cat}
-              onPress={() => {
-                setCategory(cat);
-                setMmOnly(false);
-              }}
-            />
-          ))}
-        </View>
+        {mmReadyCount > 0 ? (
+          <View style={{ marginTop: 12, flexDirection: "row" }}>
+            <Chip active={mmOnly} label={copy.academy.myanmarAvailable} onPress={() => setMmOnly((value) => !value)} />
+          </View>
+        ) : null}
       </View>
+      <ScrollView
+        horizontal
+        nestedScrollEnabled
+        showsHorizontalScrollIndicator={false}
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, gap: 8, alignItems: "center" }}
+      >
+        <Chip
+          active={category === "all"}
+          label={copy.academy.allTopics}
+          onPress={() => setCategory("all")}
+        />
+        {categories.map((cat) => (
+          <Chip
+            key={cat}
+            active={category === cat}
+            label={cat}
+            onPress={() => setCategory(cat)}
+          />
+        ))}
+      </ScrollView>
       {modules.length === 0 && query.isError ? (
-        <RetryState message={copy.errors.network} onRetry={() => void query.refetch()} />
+        <RetryState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={visible}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}

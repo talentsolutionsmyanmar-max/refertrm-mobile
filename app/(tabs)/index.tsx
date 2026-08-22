@@ -6,7 +6,7 @@ import { filterJobs, type JobPlace } from "../../src/api/filter";
 import { loadJobs } from "../../src/api/load";
 import { jobTypeLabel } from "../../src/api/project";
 import { Banner, Chip, Loading, RetryState } from "../../src/components/ui";
-import { copy } from "../../src/copy/en";
+import { copy, errorMessage } from "../../src/copy/en";
 import { useOnline } from "../../src/hooks/useOnline";
 import { color, tap } from "../../src/theme";
 
@@ -57,7 +57,7 @@ export default function JobsScreen() {
         </View>
       </View>
       {jobs.length === 0 && query.isError ? (
-        <RetryState message={copy.errors.network} onRetry={() => void query.refetch()} />
+        <RetryState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : (
         <FlatList
           data={visible}

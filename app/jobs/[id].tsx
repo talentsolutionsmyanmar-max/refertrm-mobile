@@ -6,7 +6,7 @@ import { catalog } from "../../src/cache/catalog";
 import { loadJobs } from "../../src/api/load";
 import { jobTypeLabel } from "../../src/api/project";
 import { Banner, Loading, RetryState } from "../../src/components/ui";
-import { copy } from "../../src/copy/en";
+import { copy, errorMessage } from "../../src/copy/en";
 import { parseRouteSegment } from "../../src/linking/ids";
 import { color, tap } from "../../src/theme";
 
@@ -42,7 +42,7 @@ export default function JobDetailScreen() {
   if (!meta && query.isError && !cachedMeta) {
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
-        <RetryState message={copy.errors.network} onRetry={() => void query.refetch()} />
+        <RetryState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       </View>
     );
   }

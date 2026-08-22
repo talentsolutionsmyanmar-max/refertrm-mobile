@@ -3,6 +3,8 @@
  * Job titles stay English. Server mmReady / contentMm is CCO data, not chrome.
  * Zero emoji. Formal register when MM lands.
  */
+import { isTimeoutError, isTransportError } from "../api/signal";
+
 export const copy = {
   appName: "ReferTRM",
   tagline: "Myanmar career platform",
@@ -63,10 +65,18 @@ export const copy = {
   errors: {
     generic: "Something went wrong. Try again.",
     notFound: "Not found.",
-    network: "Cannot reach ReferTRM. Check your connection.",
+    network: "ReferTRM cannot connect on this network.",
+    timeout: "ReferTRM is taking longer than expected.",
+    transport: "ReferTRM cannot connect on this network.",
     loading: "Loading…",
     retry: "Try again",
   },
 } as const;
+
+export function errorMessage(error: unknown): string {
+  if (isTimeoutError(error)) return copy.errors.timeout;
+  if (isTransportError(error)) return copy.errors.transport;
+  return copy.errors.generic;
+}
 
 export type Copy = typeof copy;

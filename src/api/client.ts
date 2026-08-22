@@ -1,7 +1,16 @@
 import { parseRouteSegment } from "../linking/ids";
 import { getAccessToken } from "../auth/session";
 import { endpoints, JOBS_LIST_QUERY } from "./endpoints";
-import { createRequestSignal, REQUEST_TIMEOUT_MS, throwIfAborted } from "./signal";
+import {
+  AbortedError,
+  createRequestSignal,
+  isAbortError,
+  isNativeTransportFailure,
+  REQUEST_TIMEOUT_MS,
+  throwIfAborted,
+  TimeoutError,
+  TransportError,
+} from "./signal";
 
 function headers(): HeadersInit {
   const token = getAccessToken();
@@ -10,7 +19,15 @@ function headers(): HeadersInit {
   return base;
 }
 
-export async function getJson(
+function classifyFetchError(error: unknown, user: AbortSignal | undefined, timedOut: boolean): never {
+  if (user?.aborted) throw new AbortedError();
+  if (timedOut) throw new TimeoutError();
+  if (isAbortError(error)) throw new AbortedError();
+  if (isNativeTransportFailure(error)) throw new TransportError(error);
+  throw error;
+}
+
+async function getJsonOnce(
   url: string,
   signal?: AbortSignal,
   timeoutMs: number = REQUEST_TIMEOUT_MS,
@@ -25,8 +42,26 @@ export async function getJson(
     throwIfAborted(signal);
     if (!res.ok) throw new Error(`refertrm_${res.status}`);
     return await res.json();
+  } catch (error) {
+    classifyFetchError(error, signal, request.timedOut());
   } finally {
     request.cleanup();
+  }
+}
+
+export async function getJson(
+  url: string,
+  signal?: AbortSignal,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): Promise<unknown> {
+  try {
+    return await getJsonOnce(url, signal, timeoutMs);
+  } catch (error) {
+    if (error instanceof TransportError && !signal?.aborted) {
+      throwIfAborted(signal);
+      return await getJsonOnce(url, signal, timeoutMs);
+    }
+    throw error;
   }
 }
 

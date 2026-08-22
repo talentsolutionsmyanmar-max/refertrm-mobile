@@ -7,7 +7,7 @@ import { safeHttpsUrl } from "../../src/api/https";
 import { parseLessonBlocks, parseQuiz, showMmToggle } from "../../src/api/lesson";
 import { loadAcademy, loadModule } from "../../src/api/load";
 import { Banner, Chip, Loading, RetryState } from "../../src/components/ui";
-import { copy } from "../../src/copy/en";
+import { copy, errorMessage } from "../../src/copy/en";
 import { isLikelyModuleId, parseRouteSegment } from "../../src/linking/ids";
 import { color, tap } from "../../src/theme";
 
@@ -73,7 +73,7 @@ export default function LessonScreen() {
     if (catalogue.isError) {
       return (
         <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
-          <RetryState message={copy.errors.network} onRetry={() => void catalogue.refetch()} />
+          <RetryState message={errorMessage(catalogue.error)} onRetry={() => void catalogue.refetch()} />
         </View>
       );
     }
@@ -93,7 +93,7 @@ export default function LessonScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
         <Text style={{ color: color.muted }}>{copy.academy.bodyOffline}</Text>
-        <RetryState message={copy.errors.network} onRetry={() => void detail.refetch()} />
+        <RetryState message={errorMessage(detail.error)} onRetry={() => void detail.refetch()} />
       </View>
     );
   }

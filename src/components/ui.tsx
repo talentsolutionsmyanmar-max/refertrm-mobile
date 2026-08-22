@@ -17,6 +17,7 @@ export function Chip({
       accessibilityRole="button"
       style={{
         minHeight: tap,
+        flexShrink: 0,
         paddingHorizontal: 16,
         borderRadius: 999,
         justifyContent: "center",

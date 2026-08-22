@@ -150,7 +150,7 @@ test("timeout cancellation", async (t) => {
 
   const started = Date.now();
   await assert.rejects(getJson(jobsUrl, undefined, 25), (error: unknown) => {
-    assert.equal((error as Error).name, "AbortError");
+    assert.equal((error as Error).name, "TimeoutError");
     return true;
   });
   assert.ok(Date.now() - started < 1000);
@@ -198,7 +198,7 @@ test("fetch/network failure cleanup", async (t) => {
   });
 
   await assert.rejects(getJson(jobsUrl, user.signal, 5_000), (error: unknown) => {
-    assert.equal((error as Error).name, "TypeError");
+    assert.equal((error as Error).name, "TransportError");
     return true;
   });
   assert.equal(timers.pending.size, 0);

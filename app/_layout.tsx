@@ -27,7 +27,7 @@ export default function RootLayout() {
           queries: {
             staleTime: 30 * 60 * 1000,
             retry: false,
-            refetchOnReconnect: false,
+            refetchOnReconnect: true,
             refetchOnWindowFocus: false,
           },
         },
