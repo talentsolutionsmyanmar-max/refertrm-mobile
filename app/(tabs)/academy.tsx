@@ -60,7 +60,7 @@ export default function AcademyScreen() {
         nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         style={{ flexGrow: 0 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, gap: 8, alignItems: "center" }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, gap: 8, alignItems: "center" }}
       >
         <Chip
           active={category === "all"}
@@ -83,7 +83,7 @@ export default function AcademyScreen() {
           style={{ flex: 1 }}
           data={visible}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
+          contentContainerStyle={{ padding: 16, paddingTop: 4, gap: 12, paddingBottom: 32 }}
           ListEmptyComponent={
             <Text style={{ color: color.muted, paddingVertical: 16 }}>
               {modules.length === 0 ? copy.academy.emptyOffline : copy.academy.empty}

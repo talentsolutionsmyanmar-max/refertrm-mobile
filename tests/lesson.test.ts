@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseLessonBlocks, parseQuiz, showMmToggle } from "../src/api/lesson.ts";
+import { parseLessonBlocks, parseQuiz, parseStringList, parseVocabulary, showMmToggle } from "../src/api/lesson.ts";
 import type { AcademyModuleDetail } from "../src/api/types.ts";
 
 const detail: AcademyModuleDetail = {
@@ -44,4 +44,47 @@ test("quiz parser ignores malformed rows and JSON strings", () => {
   const items = parseQuiz([{ question: "Q?", options: ["A", "B"] }, { question: "Nope" }]);
   assert.equal(items.length, 1);
   assert.equal(parseQuiz("not-json").length, 0);
+});
+
+test("quiz parser surfaces the source answer key and explanation, never invents one", () => {
+  const keyed = parseQuiz([
+    { question: "Q?", options: ["A", "B", "C"], correct_index: 2, explanation: "Because C." },
+  ]);
+  assert.equal(keyed[0]?.correctIndex, 2);
+  assert.equal(keyed[0]?.explanation, "Because C.");
+
+  // Alternate key spellings seen in production rows
+  assert.equal(parseQuiz([{ question: "Q?", options: ["A", "B"], correct: 1 }])[0]?.correctIndex, 1);
+  assert.equal(parseQuiz([{ question: "Q?", options: ["A", "B"], correctAnswer: 0 }])[0]?.correctIndex, 0);
+  assert.equal(parseQuiz([{ q: "Q?", answers: ["A", "B"], correct_index: 1 }])[0]?.correctIndex, 1);
+
+  // Missing or out-of-range keys stay null — the UI must not guess.
+  assert.equal(parseQuiz([{ question: "Q?", options: ["A", "B"] }])[0]?.correctIndex, null);
+  assert.equal(parseQuiz([{ question: "Q?", options: ["A", "B"], correct_index: 9 }])[0]?.correctIndex, null);
+});
+
+test("string-list parser handles JSON arrays, newline text, and junk", () => {
+  assert.deepEqual(parseStringList('["One","Two"]'), ["One", "Two"]);
+  assert.deepEqual(parseStringList(["One", " ", "Two"]), ["One", "Two"]);
+  assert.deepEqual(parseStringList("First step\nSecond step"), ["First step", "Second step"]);
+  assert.deepEqual(parseStringList(""), []);
+  assert.deepEqual(parseStringList(null), []);
+  assert.deepEqual(parseStringList(42), []);
+});
+
+test("vocabulary parser reads glossary rows and skips incomplete entries", () => {
+  const rows = parseVocabulary(
+    JSON.stringify([
+      { term: "Shortlist", meaning: "နောက်ဆုံးရွေးထားတဲ့ စာရင်း", definition: "Final candidate list." },
+      { termEn: "Brief", meaningMm: "အကျဉ်းချုပ်" },
+      { term: "NoMeaning" },
+      "junk",
+    ]),
+  );
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0]?.term, "Shortlist");
+  assert.equal(rows[0]?.definition, "Final candidate list.");
+  assert.equal(rows[1]?.term, "Brief");
+  assert.equal(rows[1]?.definition, null);
+  assert.equal(parseVocabulary("not-json").length, 0);
 });

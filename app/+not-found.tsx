@@ -10,8 +10,8 @@ export default function NotFound() {
       <View style={{ flex: 1, backgroundColor: color.bg, padding: 16, justifyContent: "center" }}>
         <Text style={{ color: color.muted }}>{copy.errors.notFound}</Text>
         <Link href="/" asChild>
-          <Pressable style={{ minHeight: tap, justifyContent: "center" }}>
-            <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.jobs}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={copy.nav.jobs} style={({ pressed }) => ({ minHeight: tap, justifyContent: "center", opacity: pressed ? 0.7 : 1 })}>
+            <Text style={{ color: color.tealDark, fontWeight: "600", fontSize: 16 }}>{copy.nav.jobs}</Text>
           </Pressable>
         </Link>
       </View>

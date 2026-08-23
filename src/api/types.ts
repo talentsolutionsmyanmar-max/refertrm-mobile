@@ -66,6 +66,7 @@ export type JobListItem = Pick<
   | "salaryDisplay"
   | "salaryMin"
   | "salaryMax"
+  | "reward"
   | "type"
   | "level"
   | "skills"
@@ -131,11 +132,17 @@ export type AcademyModuleDetail = {
   learningObjectives?: Json | null;
   furtherReadingUrl?: string | null;
   furtherReadingLabel?: string | null;
+  hookText?: string | null;
+  keyTakeaway?: string | null;
+  commonMistake?: string | null;
+  actionSteps?: string | null;
+  decisionScenario?: string | null;
   hookTextMm: string | null;
   keyTakeawayMm: string | null;
   commonMistakeMm: string | null;
   actionStepsMm: string | null;
   decisionScenarioMm: string | null;
+  vocabularyMm?: Json | null;
 };
 
 export type AcademyModuleResponse = {

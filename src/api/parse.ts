@@ -158,6 +158,7 @@ export function parseJobSummaryRecord(raw: unknown): JobListItem | null {
     salaryDisplay: job.salaryDisplay,
     salaryMin: job.salaryMin,
     salaryMax: job.salaryMax,
+    reward: job.reward,
     type: job.type,
     level: job.level,
     skills: job.skills,
@@ -262,6 +263,11 @@ export function parseModuleDetail(raw: unknown): AcademyModuleDetail | null {
     quizQuestionsMm: asJson(inner.quizQuestionsMm),
     furtherReadingUrl: asNullableString(inner.furtherReadingUrl),
     furtherReadingLabel: asNullableString(inner.furtherReadingLabel),
+    hookText: asNullableString(inner.hookText),
+    keyTakeaway: asNullableString(inner.keyTakeaway),
+    commonMistake: asNullableString(inner.commonMistake),
+    actionSteps: asNullableString(inner.actionSteps),
+    decisionScenario: asNullableString(inner.decisionScenario),
     hookTextMm: asNullableString(inner.hookTextMm),
     keyTakeawayMm: asNullableString(inner.keyTakeawayMm),
     commonMistakeMm: asNullableString(inner.commonMistakeMm),
@@ -269,6 +275,7 @@ export function parseModuleDetail(raw: unknown): AcademyModuleDetail | null {
     decisionScenarioMm: asNullableString(inner.decisionScenarioMm),
     difficultyLevel: asNullableString(inner.difficultyLevel),
     learningObjectives: asJson(inner.learningObjectives),
+    vocabularyMm: asJson(inner.vocabularyMm),
   };
 }
 
