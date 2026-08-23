@@ -2,7 +2,7 @@
 
 Android client of live ReferTRM. Package id `com.refertrm.app`.
 
-Phase 1 is **read-only**: jobs browse/search/filter, academy catalogue + `/learn/:slug` reader, offline cache, two-tab shell, `refertrm://` deep links. No apply, no profile, no sign-in.
+The read-only shell has five destinations in order: **Home / Jobs / Learn / Earn / Me**. Jobs browse/search/filter, the academy catalogue and `/learn/:slug` reader, offline cache, and allowlisted `refertrm://` deep links are implemented. Auth-required and private surfaces are honest gates or browser handoffs; there is no native sign-in, apply flow, profile editing, rewards balance, Trinity result, or Maya functionality.
 
 This GitHub repo is the Expo source. EAS project id: `cae45fbe-c884-406f-929d-14468d7e3eeb`.
 

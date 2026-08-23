@@ -15,15 +15,58 @@ interface Envelope {
   data: unknown;
 }
 
-const FORBIDDEN_KEY = /(?:access|refresh|auth|bearer|session)?token|password|secret|authorization|credential/i;
+const FORBIDDEN_KEYS = new Set([
+  "authorization",
+  "cookie",
+  "setcookie",
+  "session",
+  "accesstoken",
+  "refreshtoken",
+  "idtoken",
+  "token",
+  "password",
+  "secret",
+  "apikey",
+  "credential",
+  "authtoken",
+  "bearertoken",
+]);
+const AUTHENTICATION_HEADER = /^\s*(?:authorization\s*:\s*)?(?:(?:bearer|basic|token)\s+\S+|digest\s+\S.*)\s*$/i;
+const MAX_TRAVERSAL_DEPTH = 64;
+const MAX_TRAVERSAL_NODES = 10_000;
 
-function containsCredentialShape(value: unknown, seen = new Set<object>()): boolean {
-  if (!value || typeof value !== "object") return false;
-  if (seen.has(value)) return false;
-  seen.add(value);
+interface TraversalState {
+  readonly seen: Set<object>;
+  nodes: number;
+}
 
-  if (Array.isArray(value)) return value.some((entry) => containsCredentialShape(entry, seen));
-  return Object.entries(value).some(([key, entry]) => FORBIDDEN_KEY.test(key) || containsCredentialShape(entry, seen));
+function normalizeKey(key: string): string {
+  return key.normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function containsCredentialShape(
+  value: unknown,
+  state: TraversalState = { seen: new Set<object>(), nodes: 0 },
+  depth = 0,
+): boolean {
+  if (typeof value === "string") return AUTHENTICATION_HEADER.test(value);
+  if (value === null || typeof value === "boolean") return false;
+  if (typeof value === "number") return !Number.isFinite(value);
+  if (typeof value !== "object") return true;
+  if (depth > MAX_TRAVERSAL_DEPTH || ++state.nodes > MAX_TRAVERSAL_NODES) return true;
+  if (state.seen.has(value)) return true;
+  state.seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.some((entry) => containsCredentialShape(entry, state, depth + 1));
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) return true;
+  if (Reflect.ownKeys(value).some((key) => typeof key === "symbol")) return true;
+  return Object.entries(value).some(
+    ([key, entry]) => FORBIDDEN_KEYS.has(normalizeKey(key)) || containsCredentialShape(entry, state, depth + 1),
+  );
 }
 
 function storageKey(domain: PrivateCacheDomain): string {
@@ -48,11 +91,15 @@ export function createPrivateCache(adapter: EncryptedPrivateAdapter) {
       }
     },
     write(domain: PrivateCacheDomain, data: unknown): void {
-      if (containsCredentialShape(data)) {
+      let serialized: string;
+      try {
+        if (containsCredentialShape(data)) throw new Error("unsafe");
+        const envelope: Envelope = { schemaVersion: PRIVATE_CACHE_SCHEMA_VERSION, data };
+        serialized = JSON.stringify(envelope);
+      } catch {
         throw new Error("Credential-shaped data is forbidden in the private cache.");
       }
-      const envelope: Envelope = { schemaVersion: PRIVATE_CACHE_SCHEMA_VERSION, data };
-      adapter.set(storageKey(domain), JSON.stringify(envelope));
+      adapter.set(storageKey(domain), serialized);
     },
     clearAll(): void {
       for (const domain of PRIVATE_CACHE_DOMAINS) adapter.delete(storageKey(domain));
