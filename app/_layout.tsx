@@ -5,6 +5,7 @@ import * as Linking from "expo-linking";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MMKV } from "react-native-mmkv";
 import { parseDeepLink, jobsHref, learnHref } from "../src/linking/paths";
+import { tabHref } from "../src/navigation/routes";
 import { setKv } from "../src/storage/kv";
 
 const mmkv = new MMKV({ id: "refertrm-p1" });
@@ -39,7 +40,8 @@ export default function RootLayout() {
       try {
         if (!url) return;
         const parsed = parseDeepLink(url);
-        if (parsed.type === "jobs") router.push(jobsHref(parsed.id));
+        if (parsed.type === "tab") router.push(tabHref(parsed.tab));
+        else if (parsed.type === "jobs") router.push(jobsHref(parsed.id));
         else if (parsed.type === "learn") router.push(learnHref(parsed.slug));
         else router.push("/+not-found");
       } catch {

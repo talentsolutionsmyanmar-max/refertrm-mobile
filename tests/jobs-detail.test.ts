@@ -458,3 +458,12 @@ test("newer honest-null canonical success is not overwritten by older alias body
   await older;
   assert.equal(catalog.findJobBody(CANONICAL_ID)?.description, null);
 });
+
+test("job detail keeps apply primary and adds truthful Earn connection", () => {
+  const screen = readFileSync(join(root, "app/jobs/[id].tsx"), "utf8");
+  assert.equal(screen.includes("View and apply on ReferTRM.com"), false, "copy stays centralized");
+  assert.equal(screen.includes("copy.jobs.applyOnline"), true);
+  assert.equal(screen.includes("copy.jobs.referOrShare"), true);
+  assert.equal(screen.includes("Referral reward where the role is eligible"), true);
+  assert.equal(screen.includes("Share.share"), true);
+});

@@ -13,7 +13,7 @@ import {
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 test("academy topic chips are a horizontal scroller, not a wrapping block", () => {
-  const src = readFileSync(join(root, "app/(tabs)/academy.tsx"), "utf8");
+  const src = readFileSync(join(root, "app/(tabs)/learn.tsx"), "utf8");
   assert.equal(src.includes("flexWrap"), false);
   assert.equal(/ScrollView[\s\S]*horizontal/.test(src), true);
   assert.equal(/FlatList[\s\S]*style=\{\{ flex: 1 \}\}/.test(src), true);
