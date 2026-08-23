@@ -1,4 +1,4 @@
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -58,7 +58,7 @@ export default function JobDetailScreen() {
     <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
       <Stack.Screen options={{ title: copy.nav.jobs, headerBackTitle: copy.nav.jobs }} />
       <Text style={{ color: color.muted, fontSize: 16, lineHeight: 24 }}>{copy.errors.notFound}</Text>
-      <Link href="/" asChild>
+      <Link href="/jobs" asChild>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={copy.nav.jobs}
@@ -93,6 +93,9 @@ export default function JobDetailScreen() {
   const typeLabel = jobTypeLabel(meta.type);
   const applyUrl = canonicalJobUrl(meta.slug, meta.id);
   const reward = meta.reward && meta.reward > 0 ? formatMmk(meta.reward) : null;
+  const shareDetail = reward
+    ? "Referral reward where the role is eligible · details after eligibility is confirmed"
+    : "Sharing stays available · referral reward not offered on this role";
 
   return (
     <>
@@ -180,24 +183,44 @@ export default function JobDetailScreen() {
 
         {/* Primary action — opens the canonical web job page */}
         {applyUrl ? (
-          <Pressable
-            onPress={() => void Linking.openURL(applyUrl)}
-            accessibilityRole="link"
-            accessibilityLabel={copy.jobs.applyOnline}
-            style={({ pressed }) => ({
-              minHeight: tap,
-              borderRadius: 10,
-              backgroundColor: color.teal,
-              justifyContent: "center",
-              alignItems: "center",
-              paddingHorizontal: 20,
-              paddingVertical: 14,
-              opacity: pressed ? 0.85 : 1,
-              marginTop: 4,
-            })}
-          >
-            <Text style={{ color: color.white, fontWeight: "700", fontSize: 16 }}>{copy.jobs.applyOnline}</Text>
-          </Pressable>
+          <>
+            <Pressable
+              onPress={() => void Linking.openURL(applyUrl)}
+              accessibilityRole="link"
+              accessibilityLabel={copy.jobs.applyOnline}
+              style={({ pressed }) => ({
+                minHeight: tap,
+                borderRadius: 10,
+                backgroundColor: color.teal,
+                justifyContent: "center",
+                alignItems: "center",
+                paddingHorizontal: 20,
+                paddingVertical: 14,
+                opacity: pressed ? 0.85 : 1,
+                marginTop: 4,
+              })}
+            >
+              <Text style={{ color: color.white, fontWeight: "700", fontSize: 16 }}>{copy.jobs.applyOnline}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => void Share.share({ message: `${meta.title}\n${applyUrl}` })}
+              accessibilityRole="button"
+              accessibilityLabel={copy.jobs.referOrShare}
+              style={({ pressed }) => ({
+                minHeight: tap,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: color.navy,
+                justifyContent: "center",
+                alignItems: "center",
+                paddingHorizontal: 20,
+                opacity: pressed ? 0.72 : 1,
+              })}
+            >
+              <Text style={{ color: color.navy, fontWeight: "700", fontSize: 16 }}>{copy.jobs.referOrShare}</Text>
+            </Pressable>
+            <Text style={{ color: color.muted, fontSize: 12, lineHeight: 18, textAlign: "center" }}>{shareDetail}</Text>
+          </>
         ) : (
           <View
             style={{

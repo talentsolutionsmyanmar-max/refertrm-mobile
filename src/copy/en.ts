@@ -10,8 +10,12 @@ export const copy = {
   tagline: "Myanmar career platform",
 
   nav: {
+    home: "Home",
     jobs: "Jobs",
-    academy: "Academy",
+    learn: "Learn",
+    academy: "Learn",
+    earn: "Earn",
+    me: "Me",
   },
 
   jobs: {
@@ -42,6 +46,7 @@ export const copy = {
     internship: "Internship",
     referralReward: (amount: string) => `Estimated referral reward: ${amount}`,
     applyOnline: "View and apply on ReferTRM.com",
+    referOrShare: "Refer or share",
     applyUnavailable:
       "Applications are not available in this version. Use www.refertrm.com after sign-in.",
   },

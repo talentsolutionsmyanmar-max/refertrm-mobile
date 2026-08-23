@@ -73,7 +73,7 @@ export default function LessonScreen() {
     <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
       <Stack.Screen options={{ title: copy.nav.academy, headerBackTitle: copy.nav.academy }} />
       <Text style={{ color: color.muted, fontSize: 16, lineHeight: 24 }}>{copy.errors.notFound}</Text>
-      <Link href="/academy" asChild>
+      <Link href="/learn" asChild>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={copy.nav.academy}

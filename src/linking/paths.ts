@@ -1,6 +1,8 @@
 import { parseRouteSegment } from "./ids";
+import { isTabRoute, type TabRoute } from "../navigation/routes";
 
 export type DeepLink =
+  | { type: "tab"; tab: TabRoute }
   | { type: "jobs"; id: string }
   | { type: "learn"; slug: string }
   | { type: "invalid" };
@@ -29,6 +31,9 @@ export function parseDeepLink(raw: string): DeepLink {
   try {
     const trimmed = raw.trim();
     if (!trimmed) return { type: "invalid" };
+    // Reject dot segments before URL normalization can collapse them into an
+    // otherwise-approved tab root (for example, refertrm://jobs/..).
+    if (/(?:^|\/)(?:(?:\.|%2e){1,2})(?:\/|[?#]|$)/i.test(trimmed)) return { type: "invalid" };
 
     let url: URL;
     try {
@@ -40,8 +45,16 @@ export function parseDeepLink(raw: string): DeepLink {
     const scheme = url.protocol.replace(":", "").toLowerCase();
     if (scheme !== "refertrm" && scheme !== "https") return { type: "invalid" };
     if (scheme === "https" && !HOSTS.has(url.hostname.toLowerCase())) return { type: "invalid" };
+    if (scheme === "https" && /^\/(?:jobs|learn)\/$/i.test(url.pathname)) return { type: "invalid" };
 
     const path = appPath(url);
+    const root = path.match(/^\/([^/]+)$/)?.[1]?.toLowerCase();
+    if (root && isTabRoute(root)) {
+      if (scheme === "refertrm" || root === "jobs" || root === "learn") {
+        return { type: "tab", tab: root };
+      }
+      return { type: "invalid" };
+    }
     const jobs = path.match(/^\/jobs\/([^/]+)$/);
     if (jobs?.[1]) {
       const id = parseRouteSegment(jobs[1]);
