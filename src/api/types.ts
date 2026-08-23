@@ -66,6 +66,7 @@ export type JobListItem = Pick<
   | "salaryDisplay"
   | "salaryMin"
   | "salaryMax"
+  | "reward"
   | "type"
   | "level"
   | "skills"
@@ -76,10 +77,16 @@ export type JobListItem = Pick<
   | "status"
   | "company"
   | "_count"
->;
+> & {
+  hasDescription: boolean;
+  hasRequirements: boolean;
+};
 
-export type JobsResponse = { jobs: Job[] };
+export type JobsResponse = { jobs: JobListItem[] };
 
+export type JobDetailResponse = { job: Job };
+
+/** Catalogue row from GET /api/academy/public */
 export type AcademyModuleListItem = {
   id: string;
   titleEn: string;
@@ -102,20 +109,40 @@ export type AcademyPublicResponse = {
   count: number;
 };
 
-export type AcademyModuleDetail = AcademyModuleListItem & {
+/**
+ * Detail payload from GET /api/academy/modules/:id.
+ * Does not inherit catalogue-only required fields (mmReady, quizCount, order, ksa*).
+ */
+export type AcademyModuleDetail = {
+  id: string;
+  slug: string;
+  titleEn: string;
+  titleMm: string | null;
+  category: string;
+  durationMinutes: number | null;
+  xpReward: number | null;
   content: Json | null;
   contentMm: Json | null;
-  /** Detail payload name. Catalogue uses `mmReady`. Map both; do not assume they match. */
   mmContentReady?: boolean;
+  mmReady?: boolean;
+  isPublished?: boolean;
+  difficultyLevel: string | null;
+  quizQuestions?: Json | null;
+  quizQuestionsMm?: Json | null;
+  learningObjectives?: Json | null;
+  furtherReadingUrl?: string | null;
+  furtherReadingLabel?: string | null;
+  hookText?: string | null;
+  keyTakeaway?: string | null;
+  commonMistake?: string | null;
+  actionSteps?: string | null;
+  decisionScenario?: string | null;
   hookTextMm: string | null;
   keyTakeawayMm: string | null;
   commonMistakeMm: string | null;
   actionStepsMm: string | null;
   decisionScenarioMm: string | null;
-  isPublished: boolean;
-  difficultyLevel: string | null;
-  quizQuestions?: Json | null;
-  learningObjectives?: Json | null;
+  vocabularyMm?: Json | null;
 };
 
 export type AcademyModuleResponse = {

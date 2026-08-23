@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ReferTRM",
-    "slug": "refertrm",
+    "slug": "refertrm-mobile",
     "scheme": "refertrm",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,14 +19,51 @@
       "package": "com.refertrm.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2A3764"
+        "backgroundImage": "./assets/adaptive-icon-background.png",
+        "backgroundColor": "#2A3764",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png"
       },
-      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "refertrm",
+              "host": "home"
+            },
+            {
+              "scheme": "refertrm",
+              "host": "jobs"
+            },
+            {
+              "scheme": "refertrm",
+              "host": "learn"
+            },
+            {
+              "scheme": "refertrm",
+              "host": "earn"
+            },
+            {
+              "scheme": "refertrm",
+              "host": "me"
+            }
+          ]
+        },
+        {
+          "action": "VIEW",
           "autoVerify": true,
-          "category": ["BROWSABLE", "DEFAULT"],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
           "data": [
             {
               "scheme": "https",
@@ -42,7 +79,10 @@
         }
       ]
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
     "experiments": {
       "typedRoutes": true
     },
