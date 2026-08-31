@@ -29,8 +29,8 @@ export default function LessonScreen() {
   );
   const quiz = useMemo(() => {
     if (!module) return [];
-    return parseQuiz(mm ? module.quizQuestionsMm : module.quizQuestions);
-  }, [module, mm]);
+    return parseQuiz(module.quizQuestions);
+  }, [module]);
 
   if (catalogue.isLoading || (listed && detail.isLoading)) {
     return (
@@ -128,14 +128,14 @@ export default function LessonScreen() {
       ))}
       {quiz.length ? (
         <View style={{ marginTop: 28, borderTopWidth: 1, borderTopColor: "rgba(0,31,63,0.1)", paddingTop: 20 }}>
-          <Text style={{ color: "#001F3F", fontWeight: "700", lineHeight: mm ? 29 : 24 }}>
+          <Text style={{ color: "#001F3F", fontWeight: "700", lineHeight: 24 }}>
             {copyMm.academy.questions}
           </Text>
           {quiz.map((item, i) => (
             <View key={i} style={{ marginTop: 12 }}>
-              <Text style={{ color: "#001F3F", fontWeight: "600", lineHeight }}>{item.question}</Text>
+              <Text style={{ color: "#001F3F", fontWeight: "600", lineHeight: 24 }}>{item.question}</Text>
               {item.options.map((opt) => (
-                <Text key={opt} style={{ color: "#64748B", marginTop: 4, lineHeight }}>
+                <Text key={opt} style={{ color: "#64748B", marginTop: 4, lineHeight: 24 }}>
                   {opt}
                 </Text>
               ))}
