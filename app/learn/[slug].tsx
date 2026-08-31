@@ -7,7 +7,7 @@ import { safeHttpsUrl } from "../../src/api/https";
 import { parseLessonBlocks, parseQuiz, showMmToggle } from "../../src/api/lesson";
 import { loadAcademy, loadModule } from "../../src/api/load";
 import { Banner, Chip, Loading, RetryState } from "../../src/components/ui";
-import { copy } from "../../src/copy/en";
+import { copyMm } from "../../src/copy/mm";
 import { color, tap } from "../../src/theme";
 
 export default function LessonScreen() {
@@ -42,22 +42,28 @@ export default function LessonScreen() {
   }, [module, mm]);
   const further = module ? safeHttpsUrl(module.furtherReadingUrl) : null;
 
-  if ((catalogue.isLoading && !listed) || (listed && detail.isLoading && !module)) return <Loading />;
+  if ((catalogue.isLoading && !listed) || (listed && detail.isLoading && !module)) {
+    return <Loading label={copyMm.errors.loading} />;
+  }
 
   if (!listed && !module) {
     if (catalogue.isError) {
       return (
         <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
-          <RetryState message={copy.errors.network} onRetry={() => void catalogue.refetch()} />
+          <RetryState
+            message={copyMm.errors.network}
+            retryLabel={copyMm.errors.retry}
+            onRetry={() => void catalogue.refetch()}
+          />
         </View>
       );
     }
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
-        <Text style={{ color: color.muted }}>{copy.errors.notFound}</Text>
+        <Text style={{ color: color.muted, lineHeight: 24 }}>{copyMm.errors.notFound}</Text>
         <Link href="/academy" asChild>
           <Pressable style={{ minHeight: tap, justifyContent: "center" }}>
-            <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.academy}</Text>
+            <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copyMm.nav.academy}</Text>
           </Pressable>
         </Link>
       </View>
@@ -67,8 +73,12 @@ export default function LessonScreen() {
   if (listed && !module && detail.isError) {
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
-        <Text style={{ color: color.muted }}>{copy.academy.bodyOffline}</Text>
-        <RetryState message={copy.errors.network} onRetry={() => void detail.refetch()} />
+        <Text style={{ color: color.muted, lineHeight: 28 }}>{copyMm.academy.bodyOffline}</Text>
+        <RetryState
+          message={copyMm.errors.network}
+          retryLabel={copyMm.errors.retry}
+          onRetry={() => void detail.refetch()}
+        />
       </View>
     );
   }
@@ -78,11 +88,14 @@ export default function LessonScreen() {
   const stale = Boolean(catalogue.data?.fromCache) && !detail.data;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: color.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      {stale ? <Banner text={copy.offline.stale} /> : null}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: color.bg }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+    >
+      {stale ? <Banner text={copyMm.offline.stale} /> : null}
       <Link href="/academy" asChild>
         <Pressable style={{ minHeight: tap, justifyContent: "center" }}>
-          <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.academy}</Text>
+          <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copyMm.nav.academy}</Text>
         </Pressable>
       </Link>
       <Text style={{ color: color.teal, fontSize: 12, fontWeight: "600", marginTop: 8 }}>
@@ -94,23 +107,23 @@ export default function LessonScreen() {
           fontSize: 24,
           fontWeight: "800",
           marginTop: 4,
-          lineHeight: mm ? 36 : 30,
+          lineHeight: mm ? 43 : 30,
         }}
       >
         {title}
       </Text>
-      <Text style={{ color: color.muted, marginTop: 8 }}>
-        {listed?.durationMinutes ? copy.academy.minutes(listed.durationMinutes) : null}
+      <Text style={{ color: color.muted, marginTop: 8, lineHeight: 22 }}>
+        {listed?.durationMinutes ? copyMm.academy.minutes(listed.durationMinutes) : null}
         {listed?.durationMinutes && listed?.xpReward ? " · " : null}
-        {listed?.xpReward ? copy.academy.xp(listed.xpReward) : null}
+        {listed?.xpReward ? copyMm.academy.xp(listed.xpReward) : null}
       </Text>
       {canToggle ? (
         <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
-          <Chip active={!mm} label={copy.academy.languageEn} onPress={() => setMm(false)} />
-          <Chip active={mm} label={copy.academy.languageMm} onPress={() => setMm(true)} />
+          <Chip active={!mm} label={copyMm.academy.languageEn} onPress={() => setMm(false)} />
+          <Chip active={mm} label={copyMm.academy.languageMm} onPress={() => setMm(true)} />
         </View>
       ) : listed?.mmReady && module && !canToggle ? (
-        <Text style={{ color: color.muted, marginTop: 12 }}>{copy.academy.mmHidden}</Text>
+        <Text style={{ color: color.muted, marginTop: 12, lineHeight: 29 }}>{copyMm.academy.mmHidden}</Text>
       ) : null}
 
       {blocks.map((block, index) => (
@@ -126,7 +139,9 @@ export default function LessonScreen() {
 
       {quiz.length ? (
         <View style={{ marginTop: 28, borderTopWidth: 1, borderTopColor: color.line, paddingTop: 20 }}>
-          <Text style={{ color: color.navy, fontWeight: "700" }}>{copy.academy.questions}</Text>
+          <Text style={{ color: color.navy, fontWeight: "700", lineHeight: mm ? 29 : 24 }}>
+            {copyMm.academy.questions}
+          </Text>
           {quiz.map((item, index) => (
             <View key={index} style={{ marginTop: 12 }}>
               <Text style={{ color: color.navy, fontWeight: "600", lineHeight }}>{item.question}</Text>
@@ -146,8 +161,8 @@ export default function LessonScreen() {
           accessibilityRole="link"
           style={{ minHeight: tap, marginTop: 24, justifyContent: "center" }}
         >
-          <Text style={{ color: color.tealDark, fontWeight: "600" }}>
-            {module?.furtherReadingLabel || copy.academy.furtherReading}
+          <Text style={{ color: color.tealDark, fontWeight: "600", lineHeight: 24 }}>
+            {module?.furtherReadingLabel || copyMm.academy.furtherReading}
           </Text>
         </Pressable>
       ) : null}
