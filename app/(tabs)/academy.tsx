@@ -10,12 +10,11 @@ export default function AcademyScreen() {
   const query = useQuery({ queryKey: ["academy"], queryFn: fetchAcademy });
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [mmOnly, setMmOnly] = useState(false);
   const modules = query.data?.modules ?? [];
   const categories = useMemo(() => uniqueCategories(modules), [modules]);
   const visible = useMemo(
-    () => filterModules(modules, search, category, mmOnly),
-    [modules, search, category, mmOnly],
+    () => filterModules(modules, search, category, false),
+    [modules, search, category],
   );
 
   return (
@@ -40,17 +39,9 @@ export default function AcademyScreen() {
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
           <Chip
-            active={category === "all" && !mmOnly}
+            active={category === "all"}
             label={copyMm.academy.allTopics}
-            onPress={() => {
-              setCategory("all");
-              setMmOnly(false);
-            }}
-          />
-          <Chip
-            active={mmOnly}
-            label={copyMm.academy.myanmarAvailable}
-            onPress={() => setMmOnly((value) => !value)}
+            onPress={() => setCategory("all")}
           />
           {categories.map((cat) => (
             <Chip key={cat} active={category === cat} label={cat} onPress={() => setCategory(cat)} />
@@ -66,7 +57,7 @@ export default function AcademyScreen() {
           contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
           ListEmptyComponent={
             <Text style={{ color: "#64748B", padding: 16, lineHeight: 28 }}>
-              {modules.length === 0 ? copyMm.academy.emptyOffline : copyMm.academy.empty}
+              {copyMm.academy.empty}
             </Text>
           }
           renderItem={({ item }) => (
@@ -81,11 +72,6 @@ export default function AcademyScreen() {
               >
                 <Text style={{ color: "#001F3F", fontWeight: "700", fontSize: 16 }}>{item.titleEn}</Text>
                 <Text style={{ color: "#64748B", marginTop: 4 }}>{item.category}</Text>
-                {item.mmReady ? (
-                  <Text style={{ color: "#0F766E", marginTop: 8, fontSize: 12, lineHeight: 22 }}>
-                    {copyMm.academy.myanmarAvailable}
-                  </Text>
-                ) : null}
               </Pressable>
             </Link>
           )}
