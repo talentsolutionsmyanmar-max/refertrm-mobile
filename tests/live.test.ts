@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { JOBS_LIST_QUERY, PUBLIC_API_BASE, endpoints, laterEndpoints } from "../src/api/endpoints.ts";
 import { sanitizeJobs, sanitizeModules } from "../src/api/sanitize.ts";
 
-test("live public jobs and academy respond with arrays", async () => {
-  const jobsRes = await fetch("https://www.refertrm.com/api/jobs?status=active&limit=500&view=summary", {
-    headers: { Accept: "application/json" },
+const publicHeaders = { Accept: "application/json" } as const;
+
+test("live Worker public jobs and academy respond with arrays", async () => {
+  assert.equal(endpoints.jobs.startsWith(PUBLIC_API_BASE), true);
+  assert.equal(laterEndpoints.apply, "https://www.refertrm.com/api/apply");
+  assert.equal(laterEndpoints.me, "https://www.refertrm.com/api/user/me");
+
+  const jobsRes = await fetch(`${endpoints.jobs}?${JOBS_LIST_QUERY}`, {
+    headers: publicHeaders,
     signal: AbortSignal.timeout(25_000),
   });
   assert.equal(jobsRes.ok, true);
@@ -15,8 +22,17 @@ test("live public jobs and academy respond with arrays", async () => {
   assert.equal(jobs.length, jobsJson.jobs.length);
   assert.ok(jobs.every((job) => job.status === "active"));
 
-  const academyRes = await fetch("https://www.refertrm.com/api/academy/public", {
-    headers: { Accept: "application/json" },
+  const sampleJob = jobs[0]!;
+  const jobRes = await fetch(endpoints.job(sampleJob.id), {
+    headers: publicHeaders,
+    signal: AbortSignal.timeout(25_000),
+  });
+  assert.equal(jobRes.ok, true);
+  const jobDetail = (await jobRes.json()) as { job: { id: string } };
+  assert.equal(jobDetail.job.id, sampleJob.id);
+
+  const academyRes = await fetch(endpoints.academyPublic, {
+    headers: publicHeaders,
     signal: AbortSignal.timeout(25_000),
   });
   assert.equal(academyRes.ok, true);
@@ -27,8 +43,8 @@ test("live public jobs and academy respond with arrays", async () => {
   assert.ok(modules.length > 0);
 
   const sample = modules[0]!;
-  const detailRes = await fetch(`https://www.refertrm.com/api/academy/modules/${sample.id}`, {
-    headers: { Accept: "application/json" },
+  const detailRes = await fetch(endpoints.academyModule(sample.id), {
+    headers: publicHeaders,
     signal: AbortSignal.timeout(25_000),
   });
   assert.equal(detailRes.ok, true);
