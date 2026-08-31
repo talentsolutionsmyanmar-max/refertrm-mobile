@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getJson } from "../src/api/client.ts";
-import { JOBS_LIST_QUERY, endpoints } from "../src/api/endpoints.ts";
+import {
+  ACCOUNT_API_BASE,
+  JOBS_LIST_QUERY,
+  PUBLIC_API_BASE,
+  endpoints,
+  laterEndpoints,
+} from "../src/api/endpoints.ts";
 import { MalformedResponseError } from "../src/api/parse.ts";
 import { REQUEST_TIMEOUT_MS, TimeoutError, TransportError } from "../src/api/signal.ts";
 import { errorMessage } from "../src/copy/en.ts";
@@ -20,6 +26,28 @@ function abortableHang(): typeof fetch {
       else init?.signal?.addEventListener("abort", fail, { once: true });
     })) as typeof fetch;
 }
+
+test("public reads use the MyTel edge origin", () => {
+  assert.equal(PUBLIC_API_BASE, "https://refertrm-mytel-edge-candidate-001.kokohtikeaung.workers.dev");
+  assert.equal(endpoints.jobs, `${PUBLIC_API_BASE}/api/jobs`);
+  assert.equal(endpoints.job("sample-id"), `${PUBLIC_API_BASE}/api/jobs/sample-id`);
+  assert.equal(endpoints.academyPublic, `${PUBLIC_API_BASE}/api/academy/public`);
+  assert.equal(endpoints.academyModule("sample-id"), `${PUBLIC_API_BASE}/api/academy/modules/sample-id`);
+  assert.equal(JOBS_LIST_QUERY, "status=active&limit=500&view=summary");
+  assert.equal(jobsUrl, `${PUBLIC_API_BASE}/api/jobs?status=active&limit=500&view=summary`);
+  assert.equal(endpoints.jobs.startsWith(ACCOUNT_API_BASE), false);
+  assert.equal(endpoints.academyPublic.startsWith(ACCOUNT_API_BASE), false);
+});
+
+test("authenticated endpoints stay on the canonical origin", () => {
+  assert.equal(ACCOUNT_API_BASE, "https://www.refertrm.com");
+  assert.equal(laterEndpoints.apply, "https://www.refertrm.com/api/apply");
+  assert.equal(laterEndpoints.me, "https://www.refertrm.com/api/user/me");
+  assert.equal(laterEndpoints.apply.startsWith(PUBLIC_API_BASE), false);
+  assert.equal(laterEndpoints.me.startsWith(PUBLIC_API_BASE), false);
+  assert.equal(laterEndpoints.apply.includes("workers.dev"), false);
+  assert.equal(laterEndpoints.me.includes("workers.dev"), false);
+});
 
 test("request timeout is 45s", () => {
   assert.equal(REQUEST_TIMEOUT_MS, 45_000);
