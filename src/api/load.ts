@@ -99,7 +99,7 @@ export async function loadJobs(signal?: AbortSignal): Promise<JobsLoad> {
     return { jobs, fromCache: false, syncedAt: Date.now() };
   } catch (error) {
     if (isAbortError(error)) throw error;
-    if (cached.jobsSyncedAt != null) {
+    if (cached.jobsSyncedAt != null && cached.jobs.length > 0) {
       return { jobs: cached.jobs, fromCache: true, syncedAt: cached.jobsSyncedAt };
     }
     throw error;
@@ -158,7 +158,7 @@ export async function loadAcademy(signal?: AbortSignal): Promise<AcademyLoad> {
     return { modules, fromCache: false, syncedAt: Date.now() };
   } catch (error) {
     if (isAbortError(error)) throw error;
-    if (cached.academySyncedAt != null) {
+    if (cached.academySyncedAt != null && cached.modules.length > 0) {
       return { modules: cached.modules, fromCache: true, syncedAt: cached.academySyncedAt };
     }
     throw error;

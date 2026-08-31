@@ -106,3 +106,40 @@ test("empty cache surfaces the network error", async (t) => {
   await assert.rejects(() => loadJobs());
   await assert.rejects(() => loadAcademy());
 });
+
+test("failed refresh does not launder a synced empty catalogue into success", async (t) => {
+  resetMemoryKv();
+  resetGenerations();
+  const original = globalThis.fetch;
+  let mode: "ok" | "fail" = "ok";
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    if (mode === "fail") return new Response("down", { status: 500 });
+    const url = String(input);
+    if (url.includes("/api/jobs")) {
+      return new Response(JSON.stringify({ jobs: [] }), { status: 200 });
+    }
+    if (url.includes("/api/academy/public")) {
+      return new Response(JSON.stringify({ success: true, count: 0, modules: [] }), { status: 200 });
+    }
+    return new Response("nope", { status: 404 });
+  }) as typeof fetch;
+
+  t.after(() => {
+    globalThis.fetch = original;
+    resetMemoryKv();
+    resetGenerations();
+  });
+
+  const jobs = await loadJobs();
+  const academy = await loadAcademy();
+  assert.equal(jobs.fromCache, false);
+  assert.deepEqual(jobs.jobs, []);
+  assert.equal(academy.fromCache, false);
+  assert.deepEqual(academy.modules, []);
+  assert.equal(catalog.snapshot().jobsSyncedAt != null, true);
+  assert.equal(catalog.snapshot().academySyncedAt != null, true);
+
+  mode = "fail";
+  await assert.rejects(() => loadJobs());
+  await assert.rejects(() => loadAcademy());
+});
