@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeAction, HomeModule } from "../../src/components/home/HomeModule";
+import { openStartBridge } from "../../src/linking/start";
 import { color, tap } from "../../src/theme";
 
 const GAME_URL = "https://www.refertrm.com/eq/game";
@@ -9,6 +11,11 @@ const MAYA_URL = "https://www.refertrm.com/eq/maya";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const [startError, setStartError] = useState(false);
+  const openStart = () => {
+    setStartError(false);
+    void openStartBridge(Linking.openURL).catch(() => setStartError(true));
+  };
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: color.paper }}
@@ -27,6 +34,20 @@ export default function HomeScreen() {
           <Text style={{ color: color.muted, fontSize: 11, fontWeight: "700" }}>Guest</Text>
         </View>
       </View>
+
+      <Pressable accessibilityRole="link" accessibilityLabel="Open ReferTRM Start" onPress={openStart}>
+        <HomeModule
+          eyebrow="Start here"
+          title="Explore the whole ReferTRM platform"
+          detail="Jobs, companies, Career Game, Maya, Academy and referral pathways open from the canonical Start page."
+          accent="teal"
+        />
+      </Pressable>
+      {startError ? (
+        <Text accessibilityRole="alert" style={{ color: color.muted, fontSize: 13, lineHeight: 19 }}>
+          ReferTRM Start could not open. Check your connection and try again.
+        </Text>
+      ) : null}
 
       <HomeModule
         eyebrow="Your journey"

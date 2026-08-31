@@ -45,7 +45,16 @@ export const copy = {
     contract: "Contract",
     internship: "Internship",
     referralReward: (amount: string) => `Estimated referral reward: ${amount}`,
-    applyOnline: "View and apply on ReferTRM.com",
+    applyOnline: "Continue on ReferTRM.com",
+    applyNative: "Apply for this role",
+    applySubmitted: "Application submitted",
+    applySubmittedDetail: "ReferTRM received this application. You can review its status from Me.",
+    signInToApply: "Sign in to apply",
+    applySessionUnavailable:
+      "A secure mobile session is not available. Open ReferTRM to continue in your browser.",
+    applyConflict: "This role is inactive or an application already exists.",
+    applyRateLimited: "Too many application attempts. Try again after the server limit resets.",
+    applyFailed: "The application was not submitted. Check your connection and try again.",
     referOrShare: "Refer or share",
     applyUnavailable:
       "Applications are not available in this version. Use www.refertrm.com after sign-in.",
@@ -83,6 +92,20 @@ export const copy = {
     quizComplete: "Quiz complete",
     quizScore: (correct: number, total: number) => `${correct} of ${total} correct`,
     optionLabel: (letter: string, text: string) => `Option ${letter}: ${text}`,
+  },
+
+  account: {
+    title: "Account & sign in",
+    accountUnavailable:
+      "A secure mobile session is not available. Open ReferTRM to continue in your browser.",
+    openStart: "Open ReferTRM Start",
+    openSettings: "Open account settings",
+    loading: "Checking your ReferTRM account",
+    loadingDetail: "Private account details are requested only with a secure mobile session.",
+    error: "Account details are unavailable",
+    errorDetail: "ReferTRM could not verify private account details. No account data is shown.",
+    applications: (n: number) => `${n} application${n === 1 ? "" : "s"}`,
+    signedIn: "Verified account",
   },
 
   offline: {
