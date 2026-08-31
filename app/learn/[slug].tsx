@@ -16,6 +16,7 @@ import { loadAcademy, loadModule } from "../../src/api/load";
 import { Banner, Card, CardText, Chip, Loading, RetryState } from "../../src/components/ui";
 import { QuizRunner } from "../../src/components/QuizRunner";
 import { copy, errorMessage } from "../../src/copy/en";
+import { copyMm } from "../../src/copy/mm";
 import { isLikelyModuleId, parseRouteSegment } from "../../src/linking/ids";
 import { color, tap } from "../../src/theme";
 
@@ -45,11 +46,14 @@ export default function LessonScreen() {
       ? catalog.findModuleBody(routeSlug)
       : undefined;
   const module = detail.data ?? cachedBody;
+
   const [mm, setMm] = useState(false);
   const canToggle = module ? showMmToggle(listed?.mmReady, module) : false;
 
   useEffect(() => {
-    if (!canToggle) setMm(false);
+    if (!canToggle) {
+      setMm(false);
+    }
   }, [canToggle]);
 
   const blocks = useMemo(
@@ -58,9 +62,8 @@ export default function LessonScreen() {
   );
   const quiz = useMemo(() => {
     if (!module) return [];
-    if (mm) return parseQuiz(module.quizQuestionsMm);
     return parseQuiz(module.quizQuestions);
-  }, [module, mm]);
+  }, [module]);
   const objectives = useMemo(() => (module ? parseStringList(module.learningObjectives) : []), [module]);
   const actionSteps = useMemo(
     () => (module ? parseStringList(mm ? module.actionStepsMm : module.actionSteps) : []),
@@ -72,7 +75,7 @@ export default function LessonScreen() {
   const backFallback = (
     <View style={{ flex: 1, backgroundColor: color.bg, padding: 16 }}>
       <Stack.Screen options={{ title: copy.nav.academy, headerBackTitle: copy.nav.academy }} />
-      <Text style={{ color: color.muted, fontSize: 16, lineHeight: 24 }}>{copy.errors.notFound}</Text>
+      <Text style={{ color: color.muted, fontSize: 16, lineHeight: 24 }}>{copyMm.errors.notFound}</Text>
       <Link href="/learn" asChild>
         <Pressable
           accessibilityRole="button"
@@ -180,11 +183,17 @@ export default function LessonScreen() {
           </Text>
           {canToggle ? (
             <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-              <Chip active={!mm} label={copy.academy.languageEn} onPress={() => setMm(false)} />
-              <Chip active={mm} label={copy.academy.languageMm} onPress={() => setMm(true)} />
+              <Chip
+                active={!mm}
+                label={copyMm.academy.languageEn}
+                onPress={() => setMm(false)}
+              />
+              <Chip
+                active={mm}
+                label={copyMm.academy.languageMm}
+                onPress={() => setMm(true)}
+              />
             </View>
-          ) : listed?.mmReady && module && !canToggle ? (
-            <Text style={{ color: color.muted, marginTop: 8, fontSize: 14 }}>{copy.academy.mmHidden}</Text>
           ) : null}
         </View>
 
@@ -280,8 +289,8 @@ export default function LessonScreen() {
 
         {/* Practice quiz — tappable options with source-keyed feedback */}
         {quiz.length ? (
-          <Card label={copy.academy.quizTitle}>
-            <QuizRunner items={quiz} mm={mm} />
+          <Card label={copyMm.academy.questions}>
+            <QuizRunner items={quiz} mm={false} />
           </Card>
         ) : null}
 

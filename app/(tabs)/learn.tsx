@@ -6,6 +6,7 @@ import { filterModules, uniqueCategories } from "../../src/api/filter";
 import { loadAcademy } from "../../src/api/load";
 import { Banner, Chip, Loading, RetryState } from "../../src/components/ui";
 import { copy, errorMessage } from "../../src/copy/en";
+import { copyMm } from "../../src/copy/mm";
 import { useOnline } from "../../src/hooks/useOnline";
 import { color, tap } from "../../src/theme";
 
@@ -14,13 +15,11 @@ export default function AcademyScreen() {
   const query = useQuery({ queryKey: ["academy"], queryFn: ({ signal }) => loadAcademy(signal) });
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [mmOnly, setMmOnly] = useState(false);
   const modules = query.data?.modules ?? [];
   const categories = useMemo(() => uniqueCategories(modules), [modules]);
-  const mmReadyCount = useMemo(() => modules.filter((item) => item.mmReady).length, [modules]);
   const visible = useMemo(
-    () => filterModules(modules, search, category, mmOnly),
-    [modules, search, category, mmOnly],
+    () => filterModules(modules, search, category, false),
+    [modules, search, category],
   );
   const stale = Boolean(query.data?.fromCache) || !online;
 
@@ -32,11 +31,11 @@ export default function AcademyScreen() {
         <Banner text={online ? copy.offline.stale : copy.offline.banner} />
       ) : null}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ color: color.muted, marginBottom: 8 }}>{copy.academy.count(modules.length)}</Text>
+        <Text style={{ color: color.muted, marginBottom: 8 }}>{copyMm.academy.count(modules.length)}</Text>
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder={copy.academy.search}
+          placeholder={copyMm.academy.search}
           placeholderTextColor="#94A3B8"
           autoCorrect={false}
           autoCapitalize="none"
@@ -49,11 +48,6 @@ export default function AcademyScreen() {
             color: color.navy,
           }}
         />
-        {mmReadyCount > 0 ? (
-          <View style={{ marginTop: 12, flexDirection: "row" }}>
-            <Chip active={mmOnly} label={copy.academy.myanmarAvailable} onPress={() => setMmOnly((value) => !value)} />
-          </View>
-        ) : null}
       </View>
       <ScrollView
         horizontal
@@ -64,7 +58,7 @@ export default function AcademyScreen() {
       >
         <Chip
           active={category === "all"}
-          label={copy.academy.allTopics}
+          label={copyMm.academy.allTopics}
           onPress={() => setCategory("all")}
         />
         {categories.map((cat) => (
@@ -86,7 +80,7 @@ export default function AcademyScreen() {
           contentContainerStyle={{ padding: 16, paddingTop: 4, gap: 12, paddingBottom: 32 }}
           ListEmptyComponent={
             <Text style={{ color: color.muted, paddingVertical: 16 }}>
-              {modules.length === 0 ? copy.academy.emptyOffline : copy.academy.empty}
+              {copyMm.academy.empty}
             </Text>
           }
           renderItem={({ item }) => (
@@ -108,11 +102,6 @@ export default function AcademyScreen() {
                   {item.durationMinutes && item.xpReward ? " · " : null}
                   {item.xpReward ? copy.academy.xp(item.xpReward) : null}
                 </Text>
-                {item.mmReady ? (
-                  <Text style={{ color: color.tealDark, marginTop: 8, fontSize: 12 }}>
-                    {copy.academy.myanmarAvailable}
-                  </Text>
-                ) : null}
               </Pressable>
             </Link>
           )}
