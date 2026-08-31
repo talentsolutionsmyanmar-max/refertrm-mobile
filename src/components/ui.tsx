@@ -41,16 +41,16 @@ export function Banner({ text }: { text: string }) {
         backgroundColor: "rgba(212,175,55,0.16)",
       }}
     >
-      <Text style={{ color: color.navy, fontSize: 13 }}>{text}</Text>
+      <Text style={{ color: color.navy, fontSize: 13, lineHeight: 24 }}>{text}</Text>
     </View>
   );
 }
 
-export function Loading() {
+export function Loading({ label = copy.errors.loading }: { label?: string }) {
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: color.bg }}>
       <ActivityIndicator color={color.teal} />
-      <Text style={{ color: color.muted, marginTop: 12 }}>{copy.errors.loading}</Text>
+      <Text style={{ color: color.muted, marginTop: 12, lineHeight: 24 }}>{label}</Text>
     </View>
   );
 }
@@ -58,13 +58,15 @@ export function Loading() {
 export function RetryState({
   message,
   onRetry,
+  retryLabel = copy.errors.retry,
 }: {
   message: string;
   onRetry: () => void;
+  retryLabel?: string;
 }) {
   return (
     <View style={{ padding: 16, alignItems: "flex-start" }}>
-      <Text style={{ color: color.muted }}>{message}</Text>
+      <Text style={{ color: color.muted, lineHeight: 24 }}>{message}</Text>
       <Pressable
         onPress={onRetry}
         accessibilityRole="button"
@@ -77,7 +79,7 @@ export function RetryState({
           backgroundColor: color.navy,
         }}
       >
-        <Text style={{ color: color.white, fontWeight: "600" }}>{copy.errors.retry}</Text>
+        <Text style={{ color: color.white, fontWeight: "600", lineHeight: 24 }}>{retryLabel}</Text>
       </Pressable>
     </View>
   );
