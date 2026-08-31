@@ -5,7 +5,7 @@ import { Link } from "expo-router";
 import { filterModules, uniqueCategories } from "../../src/api/filter";
 import { loadAcademy } from "../../src/api/load";
 import { Banner, Chip, Loading, RetryState } from "../../src/components/ui";
-import { copy } from "../../src/copy/en";
+import { copyMm } from "../../src/copy/mm";
 import { useOnline } from "../../src/hooks/useOnline";
 import { color, tap } from "../../src/theme";
 
@@ -24,19 +24,21 @@ export default function AcademyScreen() {
   );
   const stale = Boolean(query.data?.fromCache) || !online;
 
-  if (query.isLoading && modules.length === 0) return <Loading />;
+  if (query.isLoading && modules.length === 0) return <Loading label={copyMm.errors.loading} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>
       {stale && modules.length > 0 ? (
-        <Banner text={online ? copy.offline.stale : copy.offline.banner} />
+        <Banner text={online ? copyMm.offline.stale : copyMm.offline.banner} />
       ) : null}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ color: color.muted, marginBottom: 8 }}>{copy.academy.count(modules.length)}</Text>
+        <Text style={{ color: color.muted, marginBottom: 8, lineHeight: 24 }}>
+          {copyMm.academy.count(modules.length)}
+        </Text>
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder={copy.academy.search}
+          placeholder={copyMm.academy.search}
           placeholderTextColor="#94A3B8"
           autoCorrect={false}
           autoCapitalize="none"
@@ -52,7 +54,7 @@ export default function AcademyScreen() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
           <Chip
             active={category === "all" && !mmOnly}
-            label={copy.academy.allTopics}
+            label={copyMm.academy.allTopics}
             onPress={() => {
               setCategory("all");
               setMmOnly(false);
@@ -61,7 +63,7 @@ export default function AcademyScreen() {
           {mmReadyCount > 0 ? (
             <Chip
               active={mmOnly}
-              label={copy.academy.myanmarAvailable}
+              label={copyMm.academy.myanmarAvailable}
               onPress={() => setMmOnly((value) => !value)}
             />
           ) : null}
@@ -79,15 +81,19 @@ export default function AcademyScreen() {
         </View>
       </View>
       {modules.length === 0 && query.isError ? (
-        <RetryState message={copy.errors.network} onRetry={() => void query.refetch()} />
+        <RetryState
+          message={copyMm.errors.network}
+          retryLabel={copyMm.errors.retry}
+          onRetry={() => void query.refetch()}
+        />
       ) : (
         <FlatList
           data={visible}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
           ListEmptyComponent={
-            <Text style={{ color: color.muted, paddingVertical: 16 }}>
-              {modules.length === 0 ? copy.academy.emptyOffline : copy.academy.empty}
+            <Text style={{ color: color.muted, paddingVertical: 16, lineHeight: 28 }}>
+              {modules.length === 0 ? copyMm.academy.emptyOffline : copyMm.academy.empty}
             </Text>
           }
           renderItem={({ item }) => (
@@ -104,14 +110,14 @@ export default function AcademyScreen() {
               >
                 <Text style={{ color: color.navy, fontWeight: "700", fontSize: 16 }}>{item.titleEn}</Text>
                 <Text style={{ color: color.muted, marginTop: 4 }}>{item.category}</Text>
-                <Text style={{ color: color.muted, marginTop: 8, fontSize: 12 }}>
-                  {item.durationMinutes ? copy.academy.minutes(item.durationMinutes) : null}
+                <Text style={{ color: color.muted, marginTop: 8, fontSize: 12, lineHeight: 22 }}>
+                  {item.durationMinutes ? copyMm.academy.minutes(item.durationMinutes) : null}
                   {item.durationMinutes && item.xpReward ? " · " : null}
-                  {item.xpReward ? copy.academy.xp(item.xpReward) : null}
+                  {item.xpReward ? copyMm.academy.xp(item.xpReward) : null}
                 </Text>
                 {item.mmReady ? (
-                  <Text style={{ color: color.tealDark, marginTop: 8, fontSize: 12 }}>
-                    {copy.academy.myanmarAvailable}
+                  <Text style={{ color: color.tealDark, marginTop: 8, fontSize: 12, lineHeight: 22 }}>
+                    {copyMm.academy.myanmarAvailable}
                   </Text>
                 ) : null}
               </Pressable>
