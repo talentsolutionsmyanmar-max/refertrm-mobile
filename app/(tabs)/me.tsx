@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { fetchApplications, fetchMe } from "../../src/api/account";
+import { AuthRequiredError } from "../../src/api/errors";
 import { ModuleState } from "../../src/components/states/ModuleState";
+import { copy } from "../../src/copy/en";
+import { START_URL } from "../../src/linking/start";
 import { getDeviceSettings, setDeviceSetting, type DeviceSettings } from "../../src/storage/settings";
 import { color, tap } from "../../src/theme";
 
@@ -37,23 +42,71 @@ function SettingRow({ label, value, onPress }: { label: string; value: string; o
 export default function MeScreen() {
   const insets = useSafeAreaInsets();
   const [settings, setSettings] = useState<DeviceSettings>(() => getDeviceSettings());
+  const profileQuery = useQuery({ queryKey: ["account", "me"], queryFn: ({ signal }) => fetchMe(signal), retry: false });
+  const applicationsQuery = useQuery({ queryKey: ["account", "applications"], queryFn: ({ signal }) => fetchApplications(signal), retry: false });
+  const authRequired = profileQuery.error instanceof AuthRequiredError || applicationsQuery.error instanceof AuthRequiredError;
+  const privateError = profileQuery.isError || applicationsQuery.isError;
+  const applications = applicationsQuery.data ?? [];
+
+  const retryPrivate = () => {
+    void profileQuery.refetch();
+    void applicationsQuery.refetch();
+  };
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: color.paper }}
       contentContainerStyle={{ padding: 16, paddingBottom: 32 + insets.bottom, gap: 12 }}
     >
       <Text style={{ color: color.navy, fontSize: 24, lineHeight: 31, fontWeight: "700" }}>Me</Text>
-      <ModuleState
-        kind="auth-required"
-        title="Account & sign in"
-        detail="Sign in on ReferTRM.com to view verified identity and private records."
-        actionLabel="Open account settings"
-        onAction={() => void Linking.openURL(SETTINGS_URL)}
-      />
+      {profileQuery.isLoading || applicationsQuery.isLoading ? (
+        <ModuleState kind="loading" title={copy.account.loading} detail={copy.account.loadingDetail} />
+      ) : profileQuery.data && applicationsQuery.data ? (
+        <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}>
+          <Text style={{ color: color.tealDark, fontSize: 11, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" }}>
+            {copy.account.signedIn}
+          </Text>
+          <Text style={{ color: color.navy, fontSize: 19, lineHeight: 26, fontWeight: "700", marginTop: 8 }}>
+            {profileQuery.data.name || profileQuery.data.email || "—"}
+          </Text>
+          <Text style={{ color: color.muted, fontSize: 13, lineHeight: 20, marginTop: 4 }}>
+            {profileQuery.data.email || "—"}
+          </Text>
+          <Text style={{ color: color.muted, fontSize: 13, lineHeight: 20, marginTop: 8 }}>
+            {copy.account.applications(applications.length)}
+          </Text>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={copy.account.openSettings}
+            onPress={() => void Linking.openURL(SETTINGS_URL)}
+            style={({ pressed }) => ({ minHeight: tap, justifyContent: "center", opacity: pressed ? 0.72 : 1 })}
+          >
+            <Text style={{ color: color.tealDark, fontSize: 14, fontWeight: "700" }}>{copy.account.openSettings}</Text>
+          </Pressable>
+        </View>
+      ) : authRequired ? (
+        <ModuleState
+          kind="auth-required"
+          title={copy.account.title}
+          detail={copy.account.accountUnavailable}
+          actionLabel={copy.account.openStart}
+          onAction={() => void Linking.openURL(START_URL)}
+        />
+      ) : privateError ? (
+        <ModuleState
+          kind="error"
+          title={copy.account.error}
+          detail={copy.account.errorDetail}
+          actionLabel={copy.errors.retry}
+          onAction={retryPrivate}
+        />
+      ) : null}
 
       <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, overflow: "hidden" }}>
-        <ToolRow icon="analytics-outline" title="Trinity" detail="Career DNA requires sign-in" />
-        <ToolRow icon="document-text-outline" title="CV & Profile" detail="Open and edit on ReferTRM.com" />
+        <ToolRow icon="analytics-outline" title="Trinity" detail={profileQuery.data ? "Verified readiness is available on ReferTRM.com" : "Career DNA requires sign-in"} />
+        <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(SETTINGS_URL)}>
+          <ToolRow icon="document-text-outline" title="CV & Profile" detail="Open and edit on ReferTRM.com" />
+        </Pressable>
         <ToolRow icon="bookmark-outline" title="Saved on this device" detail="Not account-synced" />
         <ToolRow icon="notifications-outline" title="Notifications" detail="Private updates require sign-in" />
       </View>

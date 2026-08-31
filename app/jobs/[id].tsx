@@ -1,15 +1,19 @@
 import { Linking, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { Link, Stack, useLocalSearchParams } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { submitApplication } from "../../src/api/account";
+import { AuthRequiredError, HttpError } from "../../src/api/errors";
 import { catalog } from "../../src/cache/catalog";
 import { safeHttpsUrl } from "../../src/api/https";
 import { resolveJobField } from "../../src/api/jobField";
 import { loadJob } from "../../src/api/load";
 import { jobTypeLabel } from "../../src/api/project";
 import { Banner, Card, CardText, EmptyNote, Loading, RetryState } from "../../src/components/ui";
+import { ModuleState } from "../../src/components/states/ModuleState";
 import { copy, errorMessage } from "../../src/copy/en";
 import { parseRouteSegment } from "../../src/linking/ids";
+import { START_URL } from "../../src/linking/start";
 import { color, tap } from "../../src/theme";
 
 /** Canonical public job page on the web platform. Keyed by slug (see /jobs list links). */
@@ -36,6 +40,12 @@ export default function JobDetailScreen() {
   });
   const loaded = query.data?.job;
   const meta = loaded ?? listed;
+  const applyMutation = useMutation({
+    mutationFn: async () => {
+      if (!meta) throw new Error("job_unavailable");
+      return await submitApplication({ jobId: meta.id });
+    },
+  });
   const description = resolveJobField({
     loaded: Boolean(loaded) && query.isSuccess,
     loadedValue: loaded?.description,
@@ -181,7 +191,57 @@ export default function JobDetailScreen() {
           )}
         </Card>
 
-        {/* Primary action — opens the canonical web job page */}
+        {/* Apply uses the existing request-scoped Bearer API. Browser remains an honest fallback. */}
+        {applyMutation.isSuccess ? (
+          <ModuleState
+            kind="empty"
+            title={copy.jobs.applySubmitted}
+            detail={copy.jobs.applySubmittedDetail}
+          />
+        ) : applyMutation.error instanceof AuthRequiredError ? (
+          <ModuleState
+            kind="auth-required"
+            title={copy.jobs.signInToApply}
+            detail={copy.jobs.applySessionUnavailable}
+            actionLabel={copy.account.openStart}
+            onAction={() => void Linking.openURL(START_URL)}
+          />
+        ) : applyMutation.isError ? (
+          <ModuleState
+            kind="error"
+            title={copy.jobs.applyFailed}
+            detail={
+              applyMutation.error instanceof HttpError && applyMutation.error.status === 409
+                ? copy.jobs.applyConflict
+                : applyMutation.error instanceof HttpError && applyMutation.error.status === 429
+                  ? copy.jobs.applyRateLimited
+                  : copy.jobs.applyFailed
+            }
+            actionLabel={copy.errors.retry}
+            onAction={() => applyMutation.reset()}
+          />
+        ) : (
+          <Pressable
+            onPress={() => applyMutation.mutate()}
+            disabled={applyMutation.isPending}
+            accessibilityRole="button"
+            accessibilityLabel={copy.jobs.applyNative}
+            style={({ pressed }) => ({
+              minHeight: tap,
+              borderRadius: 10,
+              backgroundColor: color.teal,
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 20,
+              paddingVertical: 14,
+              opacity: pressed || applyMutation.isPending ? 0.72 : 1,
+              marginTop: 4,
+            })}
+          >
+            <Text style={{ color: color.white, fontWeight: "700", fontSize: 16 }}>{copy.jobs.applyNative}</Text>
+          </Pressable>
+        )}
+
         {applyUrl ? (
           <>
             <Pressable
@@ -191,16 +251,16 @@ export default function JobDetailScreen() {
               style={({ pressed }) => ({
                 minHeight: tap,
                 borderRadius: 10,
-                backgroundColor: color.teal,
+                borderWidth: 1,
+                borderColor: color.teal,
                 justifyContent: "center",
                 alignItems: "center",
                 paddingHorizontal: 20,
                 paddingVertical: 14,
-                opacity: pressed ? 0.85 : 1,
-                marginTop: 4,
+                opacity: pressed ? 0.72 : 1,
               })}
             >
-              <Text style={{ color: color.white, fontWeight: "700", fontSize: 16 }}>{copy.jobs.applyOnline}</Text>
+              <Text style={{ color: color.tealDark, fontWeight: "700", fontSize: 16 }}>{copy.jobs.applyOnline}</Text>
             </Pressable>
             <Pressable
               onPress={() => void Share.share({ message: `${meta.title}\n${applyUrl}` })}

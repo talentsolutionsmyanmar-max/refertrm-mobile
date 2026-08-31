@@ -2,13 +2,24 @@ import { useEffect, useState } from "react";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Linking from "expo-linking";
+import * as SecureStore from "expo-secure-store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MMKV } from "react-native-mmkv";
+import { configureSecureSessionStorage } from "../src/auth/session";
 import { parseDeepLink, jobsHref, learnHref } from "../src/linking/paths";
 import { tabHref } from "../src/navigation/routes";
 import { setKv } from "../src/storage/kv";
 
 const mmkv = new MMKV({ id: "refertrm-p1" });
+configureSecureSessionStorage({
+  getItemAsync: (key) => SecureStore.getItemAsync(key, { keychainService: "com.refertrm.app.access-token" }),
+  setItemAsync: (key, value) =>
+    SecureStore.setItemAsync(key, value, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+      keychainService: "com.refertrm.app.access-token",
+    }),
+  deleteItemAsync: (key) => SecureStore.deleteItemAsync(key, { keychainService: "com.refertrm.app.access-token" }),
+});
 setKv({
   getString: (key) => mmkv.getString(key),
   set: (key, value) => {

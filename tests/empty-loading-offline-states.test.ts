@@ -34,9 +34,12 @@ test("Earn separates unavailable earned pending and paid values and browser-gate
 
 test("Me exposes identity tools plus honest local Saved and device settings", () => {
   const me = source("app/(tabs)/me.tsx");
-  for (const text of ["Trinity", "CV & Profile", "Saved on this device", "Notifications", "Language", "Theme", "Data saver", "Account & sign in"]) {
+  const copy = source("src/copy/en.ts");
+  for (const text of ["Trinity", "CV & Profile", "Saved on this device", "Notifications", "Language", "Theme", "Data saver"]) {
     assert.equal(me.includes(text), true, `Me must show ${text}`);
   }
+  assert.equal(me.includes("copy.account.title"), true);
+  assert.equal(copy.includes('title: "Account & sign in"'), true);
   assert.equal(me.includes('"https://www.refertrm.com/eq/settings"'), true);
   assert.equal(me.includes("setDeviceSetting"), true);
 });

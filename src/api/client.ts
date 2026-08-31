@@ -1,5 +1,4 @@
 import { parseRouteSegment } from "../linking/ids";
-import { getAccessToken } from "../auth/session";
 import { endpoints, JOBS_LIST_QUERY } from "./endpoints";
 import {
   AbortedError,
@@ -12,11 +11,8 @@ import {
   TransportError,
 } from "./signal";
 
-function headers(): HeadersInit {
-  const token = getAccessToken();
-  const base: Record<string, string> = { Accept: "application/json" };
-  if (token) base.Authorization = `Bearer ${token}`;
-  return base;
+function publicHeaders(): HeadersInit {
+  return { Accept: "application/json" };
 }
 
 function classifyFetchError(error: unknown, user: AbortSignal | undefined, timedOut: boolean): never {
@@ -36,7 +32,7 @@ async function getJsonOnce(
   const request = createRequestSignal(signal, timeoutMs);
   try {
     const res = await fetch(url, {
-      headers: headers(),
+      headers: publicHeaders(),
       signal: request.signal,
     });
     throwIfAborted(signal);
