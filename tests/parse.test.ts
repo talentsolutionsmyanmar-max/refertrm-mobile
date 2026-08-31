@@ -198,7 +198,7 @@ test("valid empty arrays persist empty catalogues", async (t) => {
   assert.deepEqual(academy.modules, []);
 });
 
-test("malformed 200 after a valid empty catalogue preserves empty cache", async (t) => {
+test("malformed 200 after a valid empty catalogue rejects and preserves cache bytes", async (t) => {
   resetMemoryKv();
   resetGenerations();
   const original = globalThis.fetch;
@@ -214,9 +214,7 @@ test("malformed 200 after a valid empty catalogue preserves empty cache", async 
   assert.equal(catalog.snapshot().jobsSyncedAt != null, true);
 
   payload = {};
-  const preserved = await loadJobs();
-  assert.equal(preserved.fromCache, true);
-  assert.deepEqual(preserved.jobs, []);
+  await assert.rejects(() => loadJobs());
   assert.equal(catalog.snapshot().jobs.length, 0);
 });
 
