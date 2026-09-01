@@ -22,6 +22,7 @@ export default function AcademyScreen() {
     [modules, search, category],
   );
   const stale = Boolean(query.data?.fromCache) || !online;
+  const hasEmptyError = modules.length === 0 && query.isError;
 
   if (query.isLoading && modules.length === 0) return <Loading />;
 
@@ -31,7 +32,9 @@ export default function AcademyScreen() {
         <Banner text={online ? copy.offline.stale : copy.offline.banner} />
       ) : null}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ color: color.muted, marginBottom: 8 }}>{copyMm.academy.count(modules.length)}</Text>
+        {!hasEmptyError ? (
+          <Text style={{ color: color.muted, marginBottom: 8 }}>{copyMm.academy.count(modules.length)}</Text>
+        ) : null}
         <TextInput
           value={search}
           onChangeText={setSearch}
@@ -70,7 +73,7 @@ export default function AcademyScreen() {
           />
         ))}
       </ScrollView>
-      {modules.length === 0 && query.isError ? (
+      {hasEmptyError ? (
         <RetryState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : (
         <FlatList
