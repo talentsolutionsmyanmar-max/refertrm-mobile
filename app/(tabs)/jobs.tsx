@@ -26,6 +26,7 @@ export default function JobsScreen() {
   const jobs = query.data?.jobs ?? [];
   const visible = useMemo(() => filterJobs(jobs, search, place), [jobs, search, place]);
   const stale = Boolean(query.data?.fromCache) || !online;
+  const hasEmptyError = jobs.length === 0 && query.isError;
 
   if (query.isLoading && jobs.length === 0) return <Loading />;
 
@@ -33,7 +34,9 @@ export default function JobsScreen() {
     <View style={{ flex: 1, backgroundColor: color.bg }}>
       {stale && jobs.length > 0 ? <Banner text={online ? copy.offline.stale : copy.offline.banner} /> : null}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ color: color.muted, marginBottom: 8 }}>{copy.jobs.count(jobs.length)}</Text>
+        {!hasEmptyError ? (
+          <Text style={{ color: color.muted, marginBottom: 8 }}>{copy.jobs.count(jobs.length)}</Text>
+        ) : null}
         <TextInput
           value={search}
           onChangeText={setSearch}
@@ -56,7 +59,7 @@ export default function JobsScreen() {
           ))}
         </View>
       </View>
-      {jobs.length === 0 && query.isError ? (
+      {hasEmptyError ? (
         <RetryState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : (
         <FlatList

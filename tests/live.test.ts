@@ -5,7 +5,8 @@ import { sanitizeJobs, sanitizeModules } from "../src/api/sanitize.ts";
 
 const publicHeaders = { Accept: "application/json" } as const;
 
-test("live Worker public jobs and academy respond with arrays", async () => {
+test("live canonical public job and academy lists and details are nonempty", async () => {
+  assert.equal(PUBLIC_API_BASE, "https://www.refertrm.com");
   assert.equal(endpoints.jobs.startsWith(PUBLIC_API_BASE), true);
   assert.equal(laterEndpoints.apply, "https://www.refertrm.com/api/apply");
   assert.equal(laterEndpoints.me, "https://www.refertrm.com/api/user/me");
@@ -30,6 +31,7 @@ test("live Worker public jobs and academy respond with arrays", async () => {
   assert.equal(jobRes.ok, true);
   const jobDetail = (await jobRes.json()) as { job: { id: string } };
   assert.equal(jobDetail.job.id, sampleJob.id);
+  assert.ok(jobDetail.job);
 
   const academyRes = await fetch(endpoints.academyPublic, {
     headers: publicHeaders,
@@ -50,4 +52,5 @@ test("live Worker public jobs and academy respond with arrays", async () => {
   assert.equal(detailRes.ok, true);
   const detail = (await detailRes.json()) as { module: { id: string; slug: string; isPublished?: boolean } };
   assert.equal(detail.module.id, sample.id);
+  assert.ok(detail.module.slug.length > 0);
 });

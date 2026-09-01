@@ -1,7 +1,7 @@
-/** Live ReferTRM HTTP surface. Public GETs use the MyTel edge origin; account routes stay canonical. */
+/** Live ReferTRM HTTP surface. Public and account routes use the canonical origin. */
 
-export const PUBLIC_API_BASE = "https://refertrm-mytel-edge-candidate-001.kokohtikeaung.workers.dev";
 export const ACCOUNT_API_BASE = "https://www.refertrm.com";
+export const PUBLIC_API_BASE = ACCOUNT_API_BASE;
 
 export const endpoints = {
   jobs: `${PUBLIC_API_BASE}/api/jobs`,

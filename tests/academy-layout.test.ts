@@ -29,6 +29,18 @@ test("academy topic chips are a horizontal scroller, not a wrapping block", () =
   assert.equal(src.includes("item.mmReady"), false);
 });
 
+test("empty catalogue errors do not render simultaneous zero-count claims", () => {
+  const jobsSrc = readFileSync(join(root, "app/(tabs)/jobs.tsx"), "utf8");
+  const academySrc = readFileSync(join(root, "app/(tabs)/learn.tsx"), "utf8");
+
+  assert.equal(jobsSrc.includes("const hasEmptyError = jobs.length === 0 && query.isError"), true);
+  assert.equal(jobsSrc.includes("{!hasEmptyError ? ("), true);
+  assert.equal(jobsSrc.includes("{hasEmptyError ? ("), true);
+  assert.equal(academySrc.includes("const hasEmptyError = modules.length === 0 && query.isError"), true);
+  assert.equal(academySrc.includes("{!hasEmptyError ? ("), true);
+  assert.equal(academySrc.includes("{hasEmptyError ? ("), true);
+});
+
 test("lesson screen restores source-bound Myanmar toggle and body modes, English quiz only", () => {
   const src = readFileSync(join(root, "app/learn/[slug].tsx"), "utf8");
   assert.equal(src.includes("quizQuestionsMm"), false);
