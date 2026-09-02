@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { fetchJobs } from "../../src/api/client";
 import { filterJobs, type JobPlace } from "../../src/api/filter";
 import { jobTypeLabel } from "../../src/api/project";
@@ -16,6 +16,7 @@ const PLACES: { id: JobPlace; label: string }[] = [
 ];
 
 export default function JobsScreen() {
+  const router = useRouter();
   const query = useQuery({ queryKey: ["jobs"], queryFn: fetchJobs });
   const [search, setSearch] = useState("");
   const [place, setPlace] = useState<JobPlace>("all");
@@ -25,7 +26,22 @@ export default function JobsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ color: "#64748B", marginBottom: 8 }}>{copy.jobs.count(jobs.length)}</Text>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 8,
+          }}
+        >
+          <Text style={{ color: "#64748B" }}>{copy.jobs.count(jobs.length)}</Text>
+          <Pressable
+            onPress={() => router.push("/start")}
+            style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 8 }}
+          >
+            <Text style={{ color: "#0F766E", fontWeight: "600" }}>{copy.start.startHere}</Text>
+          </Pressable>
+        </View>
         <TextInput
           value={search}
           onChangeText={setSearch}

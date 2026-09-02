@@ -37,6 +37,16 @@
               "scheme": "https",
               "host": "www.refertrm.com",
               "pathPrefix": "/learn"
+            },
+            {
+              "scheme": "https",
+              "host": "www.refertrm.com",
+              "pathPrefix": "/start"
+            },
+            {
+              "scheme": "https",
+              "host": "refertrm.com",
+              "pathPrefix": "/start"
             }
           ]
         }
