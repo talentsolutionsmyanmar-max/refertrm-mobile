@@ -12,6 +12,16 @@ export const copy = {
     academy: "Academy",
   },
 
+  start: {
+    title: "Start",
+    subtitle: "Choose a path",
+    startHere: "Start here",
+    jobs: "Jobs",
+    academy: "Academy",
+    careerGame: "Career Game",
+    overflow: "Full Start on the web",
+  },
+
   jobs: {
     title: "Jobs",
     search: "Search jobs",
