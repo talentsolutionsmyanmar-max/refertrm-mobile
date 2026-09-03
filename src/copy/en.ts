@@ -8,8 +8,12 @@ export const copy = {
   tagline: "Myanmar career platform",
 
   nav: {
+    home: "Home",
     jobs: "Jobs",
-    academy: "Academy",
+    learn: "Learn",
+    academy: "Learn",
+    earn: "Earn",
+    me: "Me",
   },
 
   start: {
@@ -36,9 +40,14 @@ export const copy = {
     locationUnknown: "Location not listed",
     salaryHidden: "Salary not listed",
     descriptionOffline: "Job description needs a connection.",
+    descriptionEmpty: "No description listed.",
+    requirementsOffline: "Requirements need a connection.",
+    requirementsEmpty: "No requirements listed.",
     inactive: "This job is no longer listed as open.",
     requirements: "Requirements",
-    refresh: "Refresh",
+    aboutRole: "About this role",
+    description: "Description",
+    refresh: "Try again",
     fullTime: "Full time",
     partTime: "Part time",
     contract: "Contract",
@@ -47,7 +56,7 @@ export const copy = {
 
   academy: {
     title: "Academy",
-    empty: "No published courses.",
+    empty: "No published courses match your search.",
     emptyOffline: "No saved courses yet. Connect once to download the catalogue.",
     minutes: (n: number) => `${n} min`,
     xp: (n: number) => `${n} XP`,
@@ -59,19 +68,39 @@ export const copy = {
     myanmarAvailable: "Myanmar available",
     allTopics: "All topics",
     questions: "Questions",
-    mmHidden:
-      "Myanmar for this lesson is not approved yet. English is shown instead.",
+    mmHidden: "Myanmar for this lesson is not approved yet. English is shown instead.",
+    furtherReading: "Further reading",
+    whatYouLearn: "What you will learn",
+    keyTakeaway: "Key takeaway",
+    commonMistake: "Common mistake",
+    actionSteps: "Action steps",
+    decisionScenario: "Decision scenario",
+    vocabulary: "Key terms",
+    quizTitle: "Practice quiz",
+    quizProgress: (index: number, total: number) => `Question ${index} of ${total}`,
+    quizCorrect: "Correct",
+    quizNotQuite: "Not quite",
+    quizNext: "Next question",
+    quizSeeScore: "See score",
+    quizRetake: "Retake quiz",
+    quizComplete: "Quiz complete",
+    quizScore: (correct: number, total: number) => `${correct} of ${total} correct`,
+    optionLabel: (letter: string, text: string) => `Option ${letter}: ${text}`,
   },
 
   offline: {
     banner: "You are offline. Showing saved content.",
+    stale: "Saved content. It may be out of date.",
   },
 
   errors: {
     generic: "Something went wrong. Try again.",
     notFound: "Not found.",
-    network: "Cannot reach ReferTRM. Check your connection.",
+    network: "ReferTRM cannot connect on this network.",
+    timeout: "ReferTRM is taking longer than expected.",
+    transport: "ReferTRM cannot connect on this network.",
     loading: "Loading…",
+    retry: "Try again",
   },
 } as const;
 

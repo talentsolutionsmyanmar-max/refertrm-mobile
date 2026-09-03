@@ -1,16 +1,23 @@
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { fetchJobs } from "../../src/api/client";
+import { loadJob, loadJobs } from "../../src/api/load";
 import { jobTypeLabel } from "../../src/api/project";
 import { copy } from "../../src/copy/en";
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const query = useQuery({ queryKey: ["jobs"], queryFn: fetchJobs });
-  const job = query.data?.jobs.find((j) => j.id === id || j.slug === id);
+  const listed = useQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
+  const detail = useQuery({
+    queryKey: ["job", id],
+    queryFn: ({ signal }) => loadJob(id, signal),
+    enabled: Boolean(id),
+  });
+  const header = listed.data?.jobs.find((j) => j.id === id || j.slug === id);
+  const body = detail.data?.job;
+  const job = body ?? header;
 
-  if (query.isLoading) {
+  if (listed.isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: "#001F3F", justifyContent: "center" }}>
         <ActivityIndicator color="#D4AF37" />
@@ -41,15 +48,15 @@ export default function JobDetailScreen() {
         {job.salaryDisplay || copy.jobs.salaryHidden}
         {jobTypeLabel(job.type) ? ` · ${jobTypeLabel(job.type)}` : ""}
       </Text>
-      {job.description ? (
-        <Text style={{ color: "#001F3F", marginTop: 24, lineHeight: 22 }}>{job.description}</Text>
+      {body?.description ? (
+        <Text style={{ color: "#001F3F", marginTop: 24, lineHeight: 22 }}>{body.description}</Text>
       ) : (
         <Text style={{ color: "#64748B", marginTop: 24 }}>{copy.jobs.descriptionOffline}</Text>
       )}
-      {job.requirements ? (
+      {body?.requirements ? (
         <View style={{ marginTop: 24 }}>
           <Text style={{ color: "#001F3F", fontWeight: "700" }}>{copy.jobs.requirements}</Text>
-          <Text style={{ color: "#001F3F", marginTop: 8, lineHeight: 22 }}>{job.requirements}</Text>
+          <Text style={{ color: "#001F3F", marginTop: 8, lineHeight: 22 }}>{body.requirements}</Text>
         </View>
       ) : null}
     </ScrollView>

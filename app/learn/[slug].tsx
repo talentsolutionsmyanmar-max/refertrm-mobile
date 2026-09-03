@@ -2,20 +2,20 @@ import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { fetchAcademy, fetchModule } from "../../src/api/client";
+import { loadAcademy, loadModule } from "../../src/api/load";
 import { parseLessonBlocks, parseQuiz, showMmToggle } from "../../src/api/lesson";
 import { copy } from "../../src/copy/en";
 
 export default function LessonScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const catalogue = useQuery({ queryKey: ["academy"], queryFn: fetchAcademy });
+  const catalogue = useQuery({ queryKey: ["academy"], queryFn: ({ signal }) => loadAcademy(signal) });
   const listed = catalogue.data?.modules.find((m) => m.slug === slug || m.id === slug);
   const detail = useQuery({
     queryKey: ["academy-module", listed?.id],
-    queryFn: () => fetchModule(listed!.id),
+    queryFn: ({ signal }) => loadModule(listed!.id, signal),
     enabled: Boolean(listed?.id),
   });
-  const module = detail.data?.module;
+  const module = detail.data;
   const [mm, setMm] = useState(false);
   const canToggle = module ? showMmToggle(Boolean(listed?.mmReady ?? module.mmReady), module) : false;
   const blocks = useMemo(

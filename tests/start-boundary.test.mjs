@@ -118,7 +118,11 @@ for (const file of graph) {
 
 const tabs = fs.readFileSync(path.join(root, "app", "(tabs)", "_layout.tsx"), "utf8");
 const screens = [...tabs.matchAll(/<Tabs\.Screen\s+name=["']([^"']+)["']/g)].map((m) => m[1]);
-assert.equal(screens.length, 2, "tabs layout must have exactly two Tabs.Screen");
+assert.deepEqual(
+  screens,
+  ["home", "jobs", "learn", "earn", "me"],
+  "tabs layout must have the approved five-tab shell",
+);
 assert.ok(!screens.includes("start"), "tabs layout must not register a start tab");
 
 console.log("start-boundary PASS");

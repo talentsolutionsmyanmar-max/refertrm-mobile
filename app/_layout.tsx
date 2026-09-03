@@ -1,17 +1,37 @@
+import { useEffect, useState } from "react";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import * as Linking from "expo-linking";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MMKV } from "react-native-mmkv";
 import { parseDeepLink } from "../src/linking/paths";
+import { setKv } from "../src/storage/kv";
 import { copy } from "../src/copy/en";
+
+const mmkv = new MMKV({ id: "refertrm-p1" });
+setKv({
+  getString: (key) => mmkv.getString(key),
+  set: (key, value) => {
+    mmkv.set(key, value);
+  },
+  delete: (key) => {
+    mmkv.delete(key);
+  },
+});
 
 export default function RootLayout() {
   const router = useRouter();
   const [client] = useState(
     () =>
       new QueryClient({
-        defaultOptions: { queries: { staleTime: 30 * 60 * 1000, retry: 1 } },
+        defaultOptions: {
+          queries: {
+            staleTime: 30 * 60 * 1000,
+            retry: false,
+            refetchOnReconnect: true,
+            refetchOnWindowFocus: false,
+          },
+        },
       }),
   );
 
@@ -35,7 +55,20 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={client}>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          headerStyle: { backgroundColor: "#001F3F" },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: { fontWeight: "700" },
+          headerBackVisible: true,
+        }}
+      >
+        {/* Tab navigator manages its own header. */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Detail routes get a proper Android top app bar with back navigation. */}
+        <Stack.Screen name="jobs/[id]" options={{ headerShown: true, title: "Jobs" }} />
+        <Stack.Screen name="learn/[slug]" options={{ headerShown: true, title: "Academy" }} />
         <Stack.Screen
           name="start"
           options={{
