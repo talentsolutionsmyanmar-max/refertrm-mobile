@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { parseDeepLink } from "../src/linking/paths.ts";
+import { parseDeepLink } from "../src/linking/paths";
 
 const startUrls = [
   "https://www.refertrm.com/start",
