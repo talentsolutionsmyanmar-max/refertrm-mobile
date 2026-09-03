@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ReferTRM",
-    "slug": "refertrm",
+    "slug": "refertrm-mobile",
     "scheme": "refertrm",
     "version": "1.0.0",
     "orientation": "portrait",
