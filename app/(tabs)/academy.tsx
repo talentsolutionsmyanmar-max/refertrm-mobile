@@ -4,28 +4,29 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { fetchAcademy } from "../../src/api/client";
 import { filterModules, uniqueCategories } from "../../src/api/filter";
-import { copy } from "../../src/copy/en";
+import { copyMm } from "../../src/copy/mm";
 
 export default function AcademyScreen() {
   const query = useQuery({ queryKey: ["academy"], queryFn: fetchAcademy });
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [mmOnly, setMmOnly] = useState(false);
   const modules = query.data?.modules ?? [];
   const categories = useMemo(() => uniqueCategories(modules), [modules]);
   const visible = useMemo(
-    () => filterModules(modules, search, category, mmOnly),
-    [modules, search, category, mmOnly],
+    () => filterModules(modules, search, category, false),
+    [modules, search, category],
   );
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ color: "#64748B", marginBottom: 8 }}>{copy.academy.count(modules.length)}</Text>
+        <Text style={{ color: "#64748B", marginBottom: 8, lineHeight: 24 }}>
+          {copyMm.academy.count(modules.length)}
+        </Text>
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder={copy.academy.search}
+          placeholder={copyMm.academy.search}
           placeholderTextColor="#94A3B8"
           style={{
             height: 44,
@@ -38,14 +39,10 @@ export default function AcademyScreen() {
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
           <Chip
-            active={category === "all" && !mmOnly}
-            label={copy.academy.allTopics}
-            onPress={() => {
-              setCategory("all");
-              setMmOnly(false);
-            }}
+            active={category === "all"}
+            label={copyMm.academy.allTopics}
+            onPress={() => setCategory("all")}
           />
-          <Chip active={mmOnly} label={copy.academy.myanmarAvailable} onPress={() => setMmOnly((v) => !v)} />
           {categories.map((cat) => (
             <Chip key={cat} active={category === cat} label={cat} onPress={() => setCategory(cat)} />
           ))}
@@ -59,8 +56,8 @@ export default function AcademyScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
           ListEmptyComponent={
-            <Text style={{ color: "#64748B", padding: 16 }}>
-              {modules.length === 0 ? copy.academy.emptyOffline : copy.academy.empty}
+            <Text style={{ color: "#64748B", padding: 16, lineHeight: 28 }}>
+              {copyMm.academy.empty}
             </Text>
           }
           renderItem={({ item }) => (
@@ -75,11 +72,6 @@ export default function AcademyScreen() {
               >
                 <Text style={{ color: "#001F3F", fontWeight: "700", fontSize: 16 }}>{item.titleEn}</Text>
                 <Text style={{ color: "#64748B", marginTop: 4 }}>{item.category}</Text>
-                {item.mmReady ? (
-                  <Text style={{ color: "#0F766E", marginTop: 8, fontSize: 12 }}>
-                    {copy.academy.myanmarAvailable}
-                  </Text>
-                ) : null}
               </Pressable>
             </Link>
           )}
@@ -96,7 +88,7 @@ function Chip({ active, label, onPress }: { active: boolean; label: string; onPr
     <Pressable
       onPress={onPress}
       style={{
-        height: 44,
+        minHeight: 44,
         paddingHorizontal: 16,
         borderRadius: 999,
         justifyContent: "center",
@@ -105,7 +97,7 @@ function Chip({ active, label, onPress }: { active: boolean; label: string; onPr
         borderColor: "rgba(0,31,63,0.1)",
       }}
     >
-      <Text style={{ color: active ? "#FFFFFF" : "#001F3F", fontWeight: "600" }}>{label}</Text>
+      <Text style={{ color: active ? "#FFFFFF" : "#001F3F", fontWeight: "600", lineHeight: 22 }}>{label}</Text>
     </Pressable>
   );
 }
