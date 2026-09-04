@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { color, tap } from "../../theme";
 
 export function HomeModule({
@@ -38,10 +39,12 @@ export function HomeModule({
 
 export function HomeAction({
   label,
+  icon,
   tone,
   onPress,
 }: {
   label: string;
+  icon: React.ComponentProps<typeof Ionicons>["name"];
   tone: "navy" | "gold";
   onPress: () => void;
 }) {
@@ -65,6 +68,7 @@ export function HomeAction({
         opacity: pressed ? 0.82 : 1,
       })}
     >
+      <Ionicons name={icon} size={18} color={foreground} accessibilityElementsHidden />
       <Text style={{ color: foreground, fontSize: 13, lineHeight: 18, fontWeight: "700", textAlign: "center", flexShrink: 1 }}>
         {label}
       </Text>

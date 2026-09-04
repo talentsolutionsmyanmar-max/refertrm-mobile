@@ -1,7 +1,12 @@
 import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { copy } from "../../src/copy/en";
 import { color } from "../../src/theme";
+
+function TabIcon({ name, color: iconColor, size }: { name: React.ComponentProps<typeof Ionicons>["name"]; color: string; size: number }) {
+  return <Ionicons name={name} color={iconColor} size={size} accessibilityElementsHidden />;
+}
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
@@ -31,6 +36,7 @@ export default function TabsLayout() {
           title: copy.nav.home,
           headerShown: false,
           tabBarAccessibilityLabel: copy.nav.home,
+          tabBarIcon: ({ color: iconColor, size }) => <TabIcon name="home-outline" color={iconColor} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -38,6 +44,7 @@ export default function TabsLayout() {
         options={{
           title: copy.nav.jobs,
           tabBarAccessibilityLabel: copy.nav.jobs,
+          tabBarIcon: ({ color: iconColor, size }) => <TabIcon name="briefcase-outline" color={iconColor} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -45,6 +52,7 @@ export default function TabsLayout() {
         options={{
           title: copy.nav.learn,
           tabBarAccessibilityLabel: copy.nav.learn,
+          tabBarIcon: ({ color: iconColor, size }) => <TabIcon name="book-outline" color={iconColor} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -52,6 +60,7 @@ export default function TabsLayout() {
         options={{
           title: copy.nav.earn,
           tabBarAccessibilityLabel: copy.nav.earn,
+          tabBarIcon: ({ color: iconColor, size }) => <TabIcon name="cash-outline" color={iconColor} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -60,6 +69,7 @@ export default function TabsLayout() {
           title: copy.nav.me,
           headerShown: false,
           tabBarAccessibilityLabel: copy.nav.me,
+          tabBarIcon: ({ color: iconColor, size }) => <TabIcon name="person-outline" color={iconColor} size={size} />,
         }}
       />
     </Tabs>
