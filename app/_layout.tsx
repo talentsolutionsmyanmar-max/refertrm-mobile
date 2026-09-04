@@ -3,27 +3,8 @@ import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Linking from "expo-linking";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MMKV } from "react-native-mmkv";
 import { parseDeepLink } from "../src/linking/paths";
-import { setKv } from "../src/storage/kv";
 import { copy } from "../src/copy/en";
-
-// A failed native MMKV init must never kill first paint: the store keeps the
-// in-memory default from src/storage/kv and the app renders without persistence.
-try {
-  const mmkv = new MMKV({ id: "refertrm-p1" });
-  setKv({
-    getString: (key) => mmkv.getString(key),
-    set: (key, value) => {
-      mmkv.set(key, value);
-    },
-    delete: (key) => {
-      mmkv.delete(key);
-    },
-  });
-} catch {
-  // Native storage unavailable this launch; memoryKv stays active.
-}
 
 export default function RootLayout() {
   const router = useRouter();
