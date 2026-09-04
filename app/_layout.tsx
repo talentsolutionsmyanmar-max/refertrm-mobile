@@ -8,16 +8,22 @@ import { parseDeepLink } from "../src/linking/paths";
 import { setKv } from "../src/storage/kv";
 import { copy } from "../src/copy/en";
 
-const mmkv = new MMKV({ id: "refertrm-p1" });
-setKv({
-  getString: (key) => mmkv.getString(key),
-  set: (key, value) => {
-    mmkv.set(key, value);
-  },
-  delete: (key) => {
-    mmkv.delete(key);
-  },
-});
+// A failed native MMKV init must never kill first paint: the store keeps the
+// in-memory default from src/storage/kv and the app renders without persistence.
+try {
+  const mmkv = new MMKV({ id: "refertrm-p1" });
+  setKv({
+    getString: (key) => mmkv.getString(key),
+    set: (key, value) => {
+      mmkv.set(key, value);
+    },
+    delete: (key) => {
+      mmkv.delete(key);
+    },
+  });
+} catch {
+  // Native storage unavailable this launch; memoryKv stays active.
+}
 
 export default function RootLayout() {
   const router = useRouter();
