@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { copy } from "../copy/en";
 import { color, tap } from "../theme";
 
@@ -131,11 +131,36 @@ export function Banner({ text }: { text: string }) {
   );
 }
 
+/**
+ * CONSUMER-UIUX-1 V7 — skeletons, not spinners. Static skeleton bars shaped
+ * like the content being loaded. No spinner component, no shimmer.
+ */
+export function Skeleton({ width, height = 14 }: { width: number | `${number}%`; height?: number }) {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+      style={{ width, height, borderRadius: 6, backgroundColor: "rgba(0,31,63,0.08)" }}
+    />
+  );
+}
+
 export function Loading() {
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: color.bg }}>
-      <ActivityIndicator color={color.teal} />
-      <Text style={{ color: color.muted, marginTop: 12 }}>{copy.errors.loading}</Text>
+    <View style={{ flex: 1, backgroundColor: color.bg, padding: 16, gap: 12 }}>
+      <Skeleton width="40%" height={12} />
+      <Skeleton width="75%" height={22} />
+      <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16, gap: 10 }}>
+        <Skeleton width="45%" />
+        <Skeleton width="90%" height={18} />
+        <Skeleton width="70%" height={18} />
+      </View>
+      <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16, gap: 10 }}>
+        <Skeleton width="45%" />
+        <Skeleton width="85%" height={18} />
+        <Skeleton width="60%" height={18} />
+      </View>
+      <Text style={{ color: color.muted, marginTop: 4 }}>{copy.errors.loading}</Text>
     </View>
   );
 }

@@ -99,6 +99,45 @@ export const copy = {
     detail: "Grade path and practice on ReferTRM.com. Opens in your browser.",
   },
 
+  /** CONSUMER-UIUX-1 §4 six-slot Home. Keys mirror §5 for CCO's MM pass. */
+  home: {
+    heroJob: {
+      label: "A real role, right now",
+      nofee: "Free for you — the employer pays the fee.",
+      salaryHidden: "Salary not listed",
+      empty: "The jobs list didn't load this time. Your saved roles are in Jobs.",
+      error: "We couldn't reach the jobs list.",
+      retry: "Try again",
+    },
+    primary: {
+      label: "See all jobs",
+    },
+    learn: {
+      eyebrow: "Learn",
+      title: "Build practical career judgment",
+      detail: "Published lessons and local practice questions — works offline once saved.",
+    },
+    ydc: {
+      eyebrow: "For youth & family",
+      title: "Youth Development Center",
+      detail: "Grade path and practice on ReferTRM.com. Opens in your browser.",
+    },
+    browserDoors: {
+      header: "More of your journey — on ReferTRM.com",
+      opensInBrowser: "Opens in your browser",
+      rows: {
+        careerGame: "Career Game",
+        askMaya: "Ask Maya",
+        trinity: "Trinity",
+        cv: "CV Builder",
+        referrals: "Referrals",
+      },
+    },
+    provenance: {
+      line: "The Recruiter Myanmar Co., Ltd. · Recruitment Agency Licence No. 211/2024",
+    },
+  },
+
   errors: {
     generic: "Something went wrong. Try again.",
     notFound: "Not found.",
