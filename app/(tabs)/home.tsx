@@ -97,16 +97,13 @@ function HeroJobSlot() {
             {job.location || copy.jobs.locationUnknown}
             {job.salaryDisplay ? ` · ${job.salaryDisplay}` : ` · ${copy.home.heroJob.salaryHidden}`}
           </Text>
-          <Text style={{ color: color.tealDark, ...type.bodySm, fontWeight: "600", marginTop: 8 }}>
-            {copy.home.heroJob.nofee}
-          </Text>
         </View>
       </Pressable>
     </Link>
   );
 }
 
-function BrowserDoorRow({ label, url, last }: { label: string; url: string; last?: boolean }) {
+function BrowserDoorRow({ label, url }: { label: string; url: string }) {
   return (
     <Pressable
       accessibilityRole="link"
@@ -120,7 +117,6 @@ function BrowserDoorRow({ label, url, last }: { label: string; url: string; last
         paddingVertical: 10,
         borderTopWidth: 1,
         borderTopColor: color.line,
-        marginTop: last === undefined ? 0 : undefined,
         opacity: pressed ? 0.75 : 1,
       })}
     >
@@ -152,23 +148,30 @@ export default function HomeScreen() {
       {/* 1 — MOB.HOME.HERO_JOB (hero): one real role, in-app */}
       <HeroJobSlot />
 
-      {/* 2 — MOB.HOME.PRIMARY: the only gold fill in viewport one (R1) */}
-      <Link href="/jobs" asChild>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={copy.home.primary.label}
-          style={({ pressed }) => ({
-            minHeight: tap,
-            borderRadius: 12,
-            backgroundColor: color.gold,
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: pressed ? 0.85 : 1,
-          })}
-        >
-          <Text style={{ color: color.navy, ...type.h3, fontWeight: "800" }}>{copy.home.primary.label}</Text>
-        </Pressable>
-      </Link>
+      {/* 2 — MOB.HOME.PRIMARY: the only gold fill in viewport one (R1).
+          The no-fee line sits adjacent and state-independent (MUST-9):
+          it renders on cold start, empty, and fetch failure alike. */}
+      <View style={{ gap: space[2] }}>
+        <Link href="/jobs" asChild>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={copy.home.primary.label}
+            style={({ pressed }) => ({
+              minHeight: tap,
+              borderRadius: 12,
+              backgroundColor: color.gold,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Text style={{ color: color.navy, ...type.h3, fontWeight: "800" }}>{copy.home.primary.label}</Text>
+          </Pressable>
+        </Link>
+        <Text style={{ color: color.tealDark, ...type.bodySm, fontWeight: "600", textAlign: "center" }}>
+          {copy.home.heroJob.nofee}
+        </Text>
+      </View>
 
       {/* 3 — MOB.HOME.LEARN (standard): in-app */}
       <Link href="/learn" asChild>
@@ -213,7 +216,7 @@ export default function HomeScreen() {
           <BrowserDoorRow label={copy.home.browserDoors.rows.askMaya} url={MAYA_URL} />
           <BrowserDoorRow label={copy.home.browserDoors.rows.trinity} url={TRINITY_URL} />
           <BrowserDoorRow label={copy.home.browserDoors.rows.cv} url={CV_URL} />
-          <BrowserDoorRow label={copy.home.browserDoors.rows.referrals} url={REFERRALS_URL} last />
+          <BrowserDoorRow label={copy.home.browserDoors.rows.referrals} url={REFERRALS_URL} />
         </View>
       </View>
 

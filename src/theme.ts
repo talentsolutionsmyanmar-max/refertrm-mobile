@@ -26,13 +26,14 @@ export const tap = 48;
 
 /**
  * CONSUMER-UIUX-1 type scale (S339, ratified). Nothing below 11.5px.
- * hero 22/28 · h2 18/26 · h3 15/22 · body 15/22 (MM 15/27 Padauk) ·
+ * hero 22/28 · h2 18/26 · h3 15/22 · standard 16/22 · body 15/22 (MM 15/27 Padauk) ·
  * body-sm 13/18 quiet-tier only · mono-label 11.5/16 uppercase tracking .08em
  */
 export const type = {
   hero: { fontSize: 22, lineHeight: 28 },
   h2: { fontSize: 18, lineHeight: 26 },
   h3: { fontSize: 15, lineHeight: 22 },
+  standard: { fontSize: 16, lineHeight: 22 },
   body: { fontSize: 15, lineHeight: 22 },
   /** Quiet tier only — never on hero/standard cards. */
   bodySm: { fontSize: 13, lineHeight: 18 },

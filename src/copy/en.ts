@@ -134,7 +134,7 @@ export const copy = {
       },
     },
     provenance: {
-      line: "The Recruiter Myanmar Co., Ltd. · Recruitment Agency Licence No. 211/2024",
+      line: "Platform: ReferTRM · company of record: Talent Resources Myanmar Co., Ltd. · Licence No. 211/2024",
     },
   },
 

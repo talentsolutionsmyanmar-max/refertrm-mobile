@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { color, tap } from "../../theme";
+import { color, tap, type } from "../../theme";
 
 /** Static skeleton bar — CONSUMER-UIUX-1 V7: skeletons, not spinners. */
 function SkeletonBar({ width }: { width: `${number}%` }) {
@@ -32,8 +32,8 @@ export function ModuleState({
           <SkeletonBar width="85%" />
         </View>
       ) : null}
-      <Text style={{ color: color.navy, fontSize: 16, lineHeight: 22, fontWeight: "700" }}>{title}</Text>
-      <Text style={{ color: color.muted, fontSize: 14, lineHeight: 21, marginTop: 5 }}>{detail}</Text>
+      <Text style={{ color: color.navy, ...type.standard, fontWeight: "700" }}>{title}</Text>
+      <Text style={{ color: color.muted, ...type.body, marginTop: 5 }}>{detail}</Text>
       {actionLabel && onAction ? (
         <Pressable
           accessibilityRole={kind === "auth-required" ? "link" : "button"}
@@ -51,7 +51,7 @@ export function ModuleState({
             opacity: pressed ? 0.82 : 1,
           })}
         >
-          <Text style={{ color: color.white, fontSize: 15, fontWeight: "700" }}>{actionLabel}</Text>
+          <Text style={{ color: color.white, ...type.body, fontWeight: "700" }}>{actionLabel}</Text>
         </Pressable>
       ) : null}
     </View>

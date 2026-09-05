@@ -62,7 +62,7 @@ export default function MeScreen() {
       </View>
 
       <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, overflow: "hidden" }}>
-        <Text style={{ color: color.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase", padding: 14, paddingBottom: 4 }}>
+        <Text style={{ color: color.muted, fontSize: 11.5, fontWeight: "700", letterSpacing: 0.92, textTransform: "uppercase", padding: 14, paddingBottom: 4 }}>
           Device settings
         </Text>
         <SettingRow

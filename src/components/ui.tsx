@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { copy } from "../copy/en";
-import { color, tap } from "../theme";
+import { color, tap, type } from "../theme";
 
 /** Cream content card — the ReferTRM learner surface (matches web #fffdf8). */
 export function Card({
@@ -36,9 +36,8 @@ export function Card({
           <Text
             style={{
               color: accentColor,
-              fontSize: 11,
+              ...type.monoLabel,
               fontWeight: "700",
-              letterSpacing: 1.6,
               textTransform: "uppercase",
             }}
           >

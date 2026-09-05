@@ -62,20 +62,63 @@ test("no locked-value teaser strings anywhere in app/", () => {
   }
 });
 
-test("no fontSize below 11.5 in theme.ts, HomeModule.tsx, home.tsx", () => {
-  for (const [name, src] of [
-    ["theme.ts", theme],
-    ["HomeModule.tsx", homeModule],
-    ["home.tsx", home],
-  ] as const) {
-    for (const match of src.matchAll(/fontSize:\s*([\d.]+)/g)) {
-      const size = Number(match[1]);
-      assert.ok(size >= 11.5, `${name} has fontSize ${size} below the 11.5px floor`);
+test("no fontSize below 11.5 and no inline font literals on governed surfaces", () => {
+  // C2 — the gate scans all of src/** and app/**, not just the three named files.
+  const dirs = ["src", "app"];
+  const files: string[] = [];
+  for (const dir of dirs) {
+    const stack = [join(root, dir)];
+    while (stack.length) {
+      const d = stack.pop()!;
+      for (const entry of readdirSync(d, { withFileTypes: true })) {
+        const full = join(d, entry.name);
+        if (entry.isDirectory()) stack.push(full);
+        else if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) files.push(full);
+      }
     }
   }
-  for (const match of theme.matchAll(/fontSize:\s*([\d.]+)/g)) {
-    assert.ok(Number(match[1]) >= 11.5);
+  for (const file of files) {
+    const src = readFileSync(file, "utf8");
+    for (const match of src.matchAll(/fontSize:\s*([\d.]+)/g)) {
+      const size = Number(match[1]);
+      assert.ok(size >= 11.5, `${file} has fontSize ${size} below the 11.5px floor`);
+    }
   }
+  // C4 — no inline font literals survive on the governed Home/state surfaces
+  for (const file of ["app/(tabs)/home.tsx", "src/components/home/HomeModule.tsx", "src/components/states/ModuleState.tsx"]) {
+    const src = readFileSync(join(root, file), "utf8");
+    assert.equal(/fontSize:\s*\d/.test(src), false, `${file} must consume type tokens, not inline fontSize literals`);
+  }
+});
+
+test("C1 — provenance names the licensed company of record, never the mother company", () => {
+  const exact = "Platform: ReferTRM · company of record: Talent Resources Myanmar Co., Ltd. · Licence No. 211/2024";
+  assert.ok(en.includes(`"${exact}"`), "copy.home.provenance.line must match the licensed-entity string verbatim");
+  for (const dir of ["app", "src/copy"]) {
+    const stack = [join(root, dir)];
+    while (stack.length) {
+      const d = stack.pop()!;
+      for (const entry of readdirSync(d, { withFileTypes: true })) {
+        const full = join(d, entry.name);
+        if (entry.isDirectory()) stack.push(full);
+        else if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) {
+          const src = readFileSync(full, "utf8");
+          assert.equal(src.includes("Recruiter Myanmar"), false, `${full} must not name the mother company on a consumer surface`);
+        }
+      }
+    }
+  }
+});
+
+test("C3 — the no-fee line is state-independent (adjacent to PRIMARY, not inside hero branches)", () => {
+  // It renders in HomeScreen's main return, after the HeroJobSlot component —
+  // not inside HeroJobSlot's success/empty/error branches.
+  const homeReturnIdx = home.indexOf("export default function HomeScreen");
+  const nofeeIdx = home.indexOf("copy.home.heroJob.nofee", homeReturnIdx);
+  assert.ok(nofeeIdx > homeReturnIdx, "no-fee line must render from HomeScreen's own JSX");
+  const heroFnIdx = home.indexOf("function HeroJobSlot");
+  const heroUse = home.indexOf("copy.home.heroJob.nofee");
+  assert.ok(heroUse > heroFnIdx, "no-fee reference must not live inside HeroJobSlot");
 });
 
 test("HomeModule carries exactly three weights and no borderTop accent pattern", () => {
