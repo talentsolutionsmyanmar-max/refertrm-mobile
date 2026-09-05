@@ -32,9 +32,5 @@ export function parseDeepLink(raw: string): ParsedDeepLink {
     return { type: "invalid" };
   }
 
-  if (pathname.toLowerCase() === "/start") {
-    return { type: "start" };
-  }
-
   return { type: "other" };
 }

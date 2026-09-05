@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { parseDeepLink } from "../src/linking/paths";
 
-const startUrls = [
+const startUrls = ["refertrm://start"];
+
+const browserStartUrls = [
   "https://www.refertrm.com/start",
   "https://refertrm.com/start",
-  "refertrm://start",
 ];
 
 const notStartUrls = [
@@ -20,6 +21,10 @@ const notStartUrls = [
 
 for (const url of startUrls) {
   assert.equal(parseDeepLink(url).type, "start", `${url} must parse as start`);
+}
+
+for (const url of browserStartUrls) {
+  assert.equal(parseDeepLink(url).type, "other", `${url} must open in the browser`);
 }
 
 for (const url of notStartUrls) {
