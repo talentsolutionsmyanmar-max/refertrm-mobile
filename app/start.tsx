@@ -1,7 +1,7 @@
 import { Linking, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { copy } from "../src/copy/en";
-import { GAME_URL, START_URL } from "@/src/linking/start";
+import { GAME_URL, openStartInBrowser } from "@/src/linking/start";
 
 export default function StartScreen() {
   const router = useRouter();
@@ -60,7 +60,7 @@ export default function StartScreen() {
 
       <Pressable
         onPress={() => {
-          void Linking.openURL(START_URL);
+          void openStartInBrowser();
         }}
         style={{
           minHeight: 44,
@@ -77,7 +77,7 @@ export default function StartScreen() {
 
       <Pressable
         onPress={() => {
-          void Linking.openURL(START_URL);
+          void openStartInBrowser();
         }}
         style={{
           minHeight: 44,

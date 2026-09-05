@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeAction, HomeModule } from "../../src/components/home/HomeModule";
 import { loadAcademy, loadJobs } from "../../src/api/load";
-import { START_URL } from "../../src/linking/start";
+import { openStartInBrowser } from "../../src/linking/start";
 import { copy } from "../../src/copy/en";
 import { color, tap } from "../../src/theme";
 
@@ -64,7 +64,7 @@ export default function HomeScreen() {
         accessibilityRole="link"
         accessibilityLabel={copy.ydc.title}
         onPress={() => {
-          void Linking.openURL(START_URL);
+          void openStartInBrowser();
         }}
       >
         <HomeModule eyebrow={copy.ydc.eyebrow} title={copy.ydc.title} detail={copy.ydc.detail} accent="teal" />
