@@ -32,6 +32,7 @@ export const tap = 48;
 export const type = {
   hero: { fontSize: 22, lineHeight: 28 },
   h2: { fontSize: 18, lineHeight: 26 },
+  /** @deprecated h3 duplicates body (both 15/22) and carries no meaning. Use body. Retired in the spec; kept here only until remaining references migrate. */
   h3: { fontSize: 15, lineHeight: 22 },
   standard: { fontSize: 16, lineHeight: 22 },
   body: { fontSize: 15, lineHeight: 22 },

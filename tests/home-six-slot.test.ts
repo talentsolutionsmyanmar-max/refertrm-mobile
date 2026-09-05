@@ -116,9 +116,9 @@ test("C3 — the no-fee line is state-independent (adjacent to PRIMARY, not insi
   const homeReturnIdx = home.indexOf("export default function HomeScreen");
   const nofeeIdx = home.indexOf("copy.home.heroJob.nofee", homeReturnIdx);
   assert.ok(nofeeIdx > homeReturnIdx, "no-fee line must render from HomeScreen's own JSX");
-  const heroFnIdx = home.indexOf("function HeroJobSlot");
-  const heroUse = home.indexOf("copy.home.heroJob.nofee");
-  assert.ok(heroUse > heroFnIdx, "no-fee reference must not live inside HeroJobSlot");
+  // F1 — guard the single-source property for real: exactly one occurrence in the file.
+  assert.equal((home.match(/copy\.home\.heroJob\.nofee/g) ?? []).length, 1,
+    "no-fee line has exactly one source");
 });
 
 test("HomeModule carries exactly three weights and no borderTop accent pattern", () => {

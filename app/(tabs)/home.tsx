@@ -54,7 +54,7 @@ function HeroJobSlot() {
         accessibilityLiveRegion="polite"
       >
         <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
-        <Text style={{ color: color.navy, ...type.h3, fontWeight: "700", marginTop: 6 }}>
+        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
           {failed ? copy.home.heroJob.error : copy.jobs.empty}
         </Text>
         <Text style={{ color: color.muted, ...type.body, marginTop: 5 }}>
@@ -165,7 +165,7 @@ export default function HomeScreen() {
               opacity: pressed ? 0.85 : 1,
             })}
           >
-            <Text style={{ color: color.navy, ...type.h3, fontWeight: "800" }}>{copy.home.primary.label}</Text>
+            <Text style={{ color: color.navy, ...type.standard, fontWeight: "800" }}>{copy.home.primary.label}</Text>
           </Pressable>
         </Link>
         <Text style={{ color: color.tealDark, ...type.bodySm, fontWeight: "600", textAlign: "center" }}>
