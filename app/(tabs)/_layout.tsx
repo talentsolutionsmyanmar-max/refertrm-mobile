@@ -1,15 +1,11 @@
 import { Tabs } from "expo-router";
-import { Text } from "react-native";
+import { Image, type ImageSourcePropType } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { copy } from "../../src/copy/en";
 import { color } from "../../src/theme";
 
-function TabLetter({ letter, color: iconColor }: { letter: string; color: string }) {
-  return (
-    <Text accessibilityElementsHidden style={{ color: iconColor, fontSize: 13, fontWeight: "700", lineHeight: 16 }}>
-      {letter}
-    </Text>
-  );
+function TabMark({ icon, color: iconColor }: { icon: ImageSourcePropType; color: string }) {
+  return <Image source={icon} style={{ width: 22, height: 22, tintColor: iconColor }} accessibilityElementsHidden />;
 }
 
 export default function TabsLayout() {
@@ -31,7 +27,6 @@ export default function TabsLayout() {
           paddingTop: 6,
           paddingBottom: tabBarPaddingBottom,
         },
-        tabBarIcon: ({ color: iconColor }) => <TabLetter letter="" color={iconColor} />,
       }}
       initialRouteName="home"
     >
@@ -41,7 +36,7 @@ export default function TabsLayout() {
           title: copy.nav.home,
           headerShown: false,
           tabBarAccessibilityLabel: copy.nav.home,
-          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="H" color={iconColor} />,
+          tabBarIcon: ({ color: iconColor }) => <TabMark icon={require("../../assets/tabs/home.png")} color={iconColor} />,
         }}
       />
       <Tabs.Screen
@@ -49,7 +44,7 @@ export default function TabsLayout() {
         options={{
           title: copy.nav.jobs,
           tabBarAccessibilityLabel: copy.nav.jobs,
-          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="J" color={iconColor} />,
+          tabBarIcon: ({ color: iconColor }) => <TabMark icon={require("../../assets/tabs/jobs.png")} color={iconColor} />,
         }}
       />
       <Tabs.Screen
@@ -57,7 +52,7 @@ export default function TabsLayout() {
         options={{
           title: copy.nav.learn,
           tabBarAccessibilityLabel: copy.nav.learn,
-          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="L" color={iconColor} />,
+          tabBarIcon: ({ color: iconColor }) => <TabMark icon={require("../../assets/tabs/learn.png")} color={iconColor} />,
         }}
       />
       <Tabs.Screen
@@ -65,7 +60,7 @@ export default function TabsLayout() {
         options={{
           title: copy.nav.earn,
           tabBarAccessibilityLabel: copy.nav.earn,
-          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="E" color={iconColor} />,
+          tabBarIcon: ({ color: iconColor }) => <TabMark icon={require("../../assets/tabs/earn.png")} color={iconColor} />,
         }}
       />
       <Tabs.Screen
@@ -74,7 +69,7 @@ export default function TabsLayout() {
           title: copy.nav.me,
           headerShown: false,
           tabBarAccessibilityLabel: copy.nav.me,
-          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="M" color={iconColor} />,
+          tabBarIcon: ({ color: iconColor }) => <TabMark icon={require("../../assets/tabs/me.png")} color={iconColor} />,
         }}
       />
     </Tabs>
