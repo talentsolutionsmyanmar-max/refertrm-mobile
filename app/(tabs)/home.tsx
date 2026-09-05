@@ -34,8 +34,8 @@ export default function HomeScreen() {
         detail="Sign in in your browser to continue. This app will not claim progress until it refreshes."
       >
         <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
-          <HomeAction label="Continue Career Game" icon="game-controller-outline" tone="navy" onPress={() => void Linking.openURL(GAME_URL)} />
-          <HomeAction label="Ask Maya" icon="sparkles-outline" tone="gold" onPress={() => void Linking.openURL(MAYA_URL)} />
+          <HomeAction label="Continue Career Game" tone="navy" onPress={() => void Linking.openURL(GAME_URL)} />
+          <HomeAction label="Ask Maya" tone="gold" onPress={() => void Linking.openURL(MAYA_URL)} />
         </View>
       </HomeModule>
 

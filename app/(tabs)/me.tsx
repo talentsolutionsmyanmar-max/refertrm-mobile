@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Linking, Pressable, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ModuleState } from "../../src/components/states/ModuleState";
 import { getDeviceSettings, setDeviceSetting, type DeviceSettings } from "../../src/storage/settings";
@@ -8,10 +7,9 @@ import { color, tap } from "../../src/theme";
 
 const SETTINGS_URL = "https://www.refertrm.com/eq/settings";
 
-function ToolRow({ icon, title, detail }: { icon: React.ComponentProps<typeof Ionicons>["name"]; title: string; detail: string }) {
+function ToolRow({ title, detail }: { title: string; detail: string }) {
   return (
     <View style={{ minHeight: 64, flexDirection: "row", gap: 12, alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: color.line }}>
-      <Ionicons name={icon} size={22} color={color.tealDark} accessibilityElementsHidden />
       <View style={{ flex: 1 }}>
         <Text style={{ color: color.navy, fontSize: 15, fontWeight: "700" }}>{title}</Text>
         <Text style={{ color: color.muted, fontSize: 12, lineHeight: 18, marginTop: 2 }}>{detail}</Text>
@@ -52,10 +50,10 @@ export default function MeScreen() {
       />
 
       <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, overflow: "hidden" }}>
-        <ToolRow icon="analytics-outline" title="Trinity" detail="Career DNA requires sign-in" />
-        <ToolRow icon="document-text-outline" title="CV & Profile" detail="Open and edit on ReferTRM.com" />
-        <ToolRow icon="bookmark-outline" title="Saved on this device" detail="Not account-synced" />
-        <ToolRow icon="notifications-outline" title="Notifications" detail="Private updates require sign-in" />
+        <ToolRow title="Trinity" detail="Career DNA requires sign-in" />
+        <ToolRow title="CV & Profile" detail="Open and edit on ReferTRM.com" />
+        <ToolRow title="Saved on this device" detail="Not account-synced" />
+        <ToolRow title="Notifications" detail="Private updates require sign-in" />
       </View>
 
       <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, overflow: "hidden" }}>
