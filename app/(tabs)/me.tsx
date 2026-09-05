@@ -1,20 +1,25 @@
 import { useState } from "react";
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ModuleState } from "../../src/components/states/ModuleState";
+import { LOGIN_TRINITY, SETTINGS_URL, openWeb } from "../../src/linking/start";
 import { getDeviceSettings, setDeviceSetting, type DeviceSettings } from "../../src/storage/settings";
 import { color, tap } from "../../src/theme";
 
-const SETTINGS_URL = "https://www.refertrm.com/eq/settings";
-
-function ToolRow({ title, detail }: { title: string; detail: string }) {
-  return (
+function ToolRow({ title, detail, onPress }: { title: string; detail: string; onPress?: () => void }) {
+  const body = (
     <View style={{ minHeight: 64, flexDirection: "row", gap: 12, alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: color.line }}>
       <View style={{ flex: 1 }}>
         <Text style={{ color: color.navy, fontSize: 15, fontWeight: "700" }}>{title}</Text>
         <Text style={{ color: color.muted, fontSize: 12, lineHeight: 18, marginTop: 2 }}>{detail}</Text>
       </View>
     </View>
+  );
+  if (!onPress) return body;
+  return (
+    <Pressable accessibilityRole="link" accessibilityLabel={`${title}. ${detail}`} onPress={onPress}>
+      {body}
+    </Pressable>
   );
 }
 
@@ -46,11 +51,11 @@ export default function MeScreen() {
         title="Account & sign in"
         detail="Sign in on ReferTRM.com to view verified identity and private records."
         actionLabel="Open account settings"
-        onAction={() => void Linking.openURL(SETTINGS_URL)}
+        onAction={() => void openWeb(SETTINGS_URL)}
       />
 
       <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, overflow: "hidden" }}>
-        <ToolRow title="Trinity" detail="Career DNA requires sign-in" />
+        <ToolRow title="Trinity" detail="Career DNA requires sign-in" onPress={() => void openWeb(LOGIN_TRINITY)} />
         <ToolRow title="CV & Profile" detail="Open and edit on ReferTRM.com" />
         <ToolRow title="Saved on this device" detail="Not account-synced" />
         <ToolRow title="Notifications" detail="Private updates require sign-in" />
