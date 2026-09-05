@@ -39,12 +39,12 @@ export default function HomeScreen() {
         </View>
       </HomeModule>
 
-      <View style={{ flexDirection: "row", gap: 10 }}>
+      <View style={{ flexDirection: "row", gap: 10, alignItems: "stretch" }}>
         <View style={{ flex: 1 }}>
-          <HomeModule eyebrow="Earn" title="— MMK" detail="Shown after verification" accent="gold" />
+          <HomeModule fill eyebrow="Earn" title="— MMK" detail="Shown after verification" accent="gold" />
         </View>
         <View style={{ flex: 1 }}>
-          <HomeModule eyebrow="Trinity" title="Career DNA" detail="Sign in to view your verified readiness" accent="teal" />
+          <HomeModule fill eyebrow="Trinity" title="Career DNA" detail="Sign in to view your verified readiness" accent="teal" />
         </View>
       </View>
 

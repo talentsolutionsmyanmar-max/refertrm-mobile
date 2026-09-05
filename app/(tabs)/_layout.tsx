@@ -1,7 +1,16 @@
 import { Tabs } from "expo-router";
+import { Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { copy } from "../../src/copy/en";
 import { color } from "../../src/theme";
+
+function TabLetter({ letter, color: iconColor }: { letter: string; color: string }) {
+  return (
+    <Text accessibilityElementsHidden style={{ color: iconColor, fontSize: 13, fontWeight: "700", lineHeight: 16 }}>
+      {letter}
+    </Text>
+  );
+}
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
@@ -22,6 +31,7 @@ export default function TabsLayout() {
           paddingTop: 6,
           paddingBottom: tabBarPaddingBottom,
         },
+        tabBarIcon: ({ color: iconColor }) => <TabLetter letter="" color={iconColor} />,
       }}
       initialRouteName="home"
     >
@@ -31,6 +41,7 @@ export default function TabsLayout() {
           title: copy.nav.home,
           headerShown: false,
           tabBarAccessibilityLabel: copy.nav.home,
+          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="H" color={iconColor} />,
         }}
       />
       <Tabs.Screen
@@ -38,6 +49,7 @@ export default function TabsLayout() {
         options={{
           title: copy.nav.jobs,
           tabBarAccessibilityLabel: copy.nav.jobs,
+          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="J" color={iconColor} />,
         }}
       />
       <Tabs.Screen
@@ -45,6 +57,7 @@ export default function TabsLayout() {
         options={{
           title: copy.nav.learn,
           tabBarAccessibilityLabel: copy.nav.learn,
+          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="L" color={iconColor} />,
         }}
       />
       <Tabs.Screen
@@ -52,6 +65,7 @@ export default function TabsLayout() {
         options={{
           title: copy.nav.earn,
           tabBarAccessibilityLabel: copy.nav.earn,
+          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="E" color={iconColor} />,
         }}
       />
       <Tabs.Screen
@@ -60,6 +74,7 @@ export default function TabsLayout() {
           title: copy.nav.me,
           headerShown: false,
           tabBarAccessibilityLabel: copy.nav.me,
+          tabBarIcon: ({ color: iconColor }) => <TabLetter letter="M" color={iconColor} />,
         }}
       />
     </Tabs>

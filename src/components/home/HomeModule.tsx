@@ -6,12 +6,14 @@ export function HomeModule({
   title,
   detail,
   accent = "navy",
+  fill = false,
   children,
 }: {
   eyebrow: string;
   title: string;
   detail?: string;
   accent?: "navy" | "gold" | "teal";
+  fill?: boolean;
   children?: React.ReactNode;
 }) {
   const borderColor = accent === "gold" ? color.gold : accent === "teal" ? color.teal : color.line;
@@ -24,6 +26,7 @@ export function HomeModule({
         borderRadius: 12,
         backgroundColor: color.cream,
         padding: 14,
+        flex: fill ? 1 : undefined,
       }}
     >
       <Text style={{ color: color.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase" }}>

@@ -17,11 +17,12 @@ test("tab navigator renders exactly Home Jobs Learn Earn Me in order", () => {
   }
 });
 
-test("tab navigator is label-only with no icon font dependency", () => {
+test("tab icons are Text letters with no icon font dependency", () => {
   const layout = readFileSync(join(root, "app/(tabs)/_layout.tsx"), "utf8");
 
   assert.equal(layout.includes("Ionicons"), false);
-  assert.equal(layout.includes("tabBarIcon"), false);
-  assert.equal(layout.includes("<Text"), false);
+  assert.equal(layout.includes("@expo/vector-icons"), false);
+  assert.equal(layout.includes("tabBarIcon"), true);
+  assert.equal(layout.includes("TabLetter"), true);
   assert.equal(layout.includes("tabBarAccessibilityLabel"), true);
 });
