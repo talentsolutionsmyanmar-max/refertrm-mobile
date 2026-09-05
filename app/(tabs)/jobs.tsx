@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { filterJobs, type JobPlace } from "../../src/api/filter";
 import { loadJobs } from "../../src/api/load";
 import { jobTypeLabel } from "../../src/api/project";
-import { Banner, Chip, Loading, RetryState } from "../../src/components/ui";
+import { Banner, Chip, RetryState } from "../../src/components/ui";
 import { errorMessage } from "../../src/copy/error";
 import { copy } from "../../src/copy/en";
 import { useOnline } from "../../src/hooks/useOnline";
@@ -27,8 +27,6 @@ export default function JobsScreen() {
   const jobs = query.data?.jobs ?? [];
   const visible = useMemo(() => filterJobs(jobs, search, place), [jobs, search, place]);
   const stale = Boolean(query.data?.fromCache) || !online;
-
-  if (query.isLoading && jobs.length === 0) return <Loading />;
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>
@@ -59,6 +57,11 @@ export default function JobsScreen() {
       </View>
       {jobs.length === 0 && query.isError ? (
         <RetryState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
+      ) : jobs.length === 0 && query.isLoading ? (
+        <View style={{ padding: 24, alignItems: "center", gap: 8 }}>
+          <ActivityIndicator color="#0D9488" />
+          <Text style={{ color: color.muted }}>{copy.errors.connecting}</Text>
+        </View>
       ) : (
         <FlatList
           data={visible}

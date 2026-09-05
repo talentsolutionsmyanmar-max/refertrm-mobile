@@ -6,6 +6,7 @@ import {
   createRequestSignal,
   isAbortError,
   isNativeTransportFailure,
+  LIST_TIMEOUT_MS,
   REQUEST_TIMEOUT_MS,
   throwIfAborted,
   TimeoutError,
@@ -53,11 +54,12 @@ export async function getJson(
   url: string,
   signal?: AbortSignal,
   timeoutMs: number = REQUEST_TIMEOUT_MS,
+  retryTransport: boolean = true,
 ): Promise<unknown> {
   try {
     return await getJsonOnce(url, signal, timeoutMs);
   } catch (error) {
-    if (error instanceof TransportError && !signal?.aborted) {
+    if (retryTransport && error instanceof TransportError && !signal?.aborted) {
       throwIfAborted(signal);
       return await getJsonOnce(url, signal, timeoutMs);
     }
@@ -66,7 +68,7 @@ export async function getJson(
 }
 
 export function fetchJobs(signal?: AbortSignal): Promise<unknown> {
-  return getJson(`${endpoints.jobs}?${JOBS_LIST_QUERY}`, signal);
+  return getJson(`${endpoints.jobs}?${JOBS_LIST_QUERY}`, signal, LIST_TIMEOUT_MS, false);
 }
 
 export function fetchJob(id: string, signal?: AbortSignal): Promise<unknown> {
@@ -76,7 +78,7 @@ export function fetchJob(id: string, signal?: AbortSignal): Promise<unknown> {
 }
 
 export function fetchAcademy(signal?: AbortSignal): Promise<unknown> {
-  return getJson(endpoints.academyPublic, signal);
+  return getJson(endpoints.academyPublic, signal, LIST_TIMEOUT_MS, false);
 }
 
 export function fetchModule(id: string, signal?: AbortSignal): Promise<unknown> {

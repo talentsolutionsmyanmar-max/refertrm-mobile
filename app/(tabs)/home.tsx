@@ -1,7 +1,12 @@
+import { useEffect } from "react";
 import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeAction, HomeModule } from "../../src/components/home/HomeModule";
+import { loadAcademy, loadJobs } from "../../src/api/load";
+import { START_URL } from "../../src/linking/start";
+import { copy } from "../../src/copy/en";
 import { color, tap } from "../../src/theme";
 
 const GAME_URL = "https://www.refertrm.com/eq/game";
@@ -9,6 +14,13 @@ const MAYA_URL = "https://www.refertrm.com/eq/maya";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    void queryClient.prefetchQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
+    void queryClient.prefetchQuery({ queryKey: ["academy"], queryFn: ({ signal }) => loadAcademy(signal) });
+  }, [queryClient]);
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: color.paper }}
@@ -47,6 +59,16 @@ export default function HomeScreen() {
           <HomeModule fill eyebrow="Trinity" title="Career DNA" detail="Sign in to view your verified readiness" accent="teal" />
         </View>
       </View>
+
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={copy.ydc.title}
+        onPress={() => {
+          void Linking.openURL(START_URL);
+        }}
+      >
+        <HomeModule eyebrow={copy.ydc.eyebrow} title={copy.ydc.title} detail={copy.ydc.detail} accent="teal" />
+      </Pressable>
 
       <Link href="/jobs" asChild>
         <Pressable accessibilityRole="link" accessibilityLabel="Featured jobs">

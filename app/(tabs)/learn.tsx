@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { filterModules, uniqueCategories } from "../../src/api/filter";
 import { loadAcademy } from "../../src/api/load";
-import { Banner, Chip, Loading, RetryState } from "../../src/components/ui";
+import { Banner, Chip, RetryState } from "../../src/components/ui";
 import { errorMessage } from "../../src/copy/error";
 import { copy } from "../../src/copy/en";
 import { useOnline } from "../../src/hooks/useOnline";
@@ -24,8 +24,6 @@ export default function AcademyScreen() {
     [modules, search, category, mmOnly],
   );
   const stale = Boolean(query.data?.fromCache) || !online;
-
-  if (query.isLoading && modules.length === 0) return <Loading />;
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>
@@ -79,6 +77,11 @@ export default function AcademyScreen() {
       </ScrollView>
       {modules.length === 0 && query.isError ? (
         <RetryState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
+      ) : modules.length === 0 && query.isLoading ? (
+        <View style={{ padding: 24, alignItems: "center", gap: 8 }}>
+          <ActivityIndicator color="#0D9488" />
+          <Text style={{ color: color.muted }}>{copy.errors.connecting}</Text>
+        </View>
       ) : (
         <FlatList
           style={{ flex: 1 }}
