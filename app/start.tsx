@@ -27,7 +27,7 @@ export default function StartScreen() {
       </Pressable>
 
       <Pressable
-        onPress={() => router.push("/academy")}
+        onPress={() => router.push("/learn")}
         style={{
           minHeight: 44,
           borderWidth: 1,
@@ -56,6 +56,23 @@ export default function StartScreen() {
         }}
       >
         <Text style={{ color: "#001F3F", fontWeight: "700", fontSize: 16 }}>{copy.start.careerGame}</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => {
+          void Linking.openURL(START_URL);
+        }}
+        style={{
+          minHeight: 44,
+          borderWidth: 1,
+          borderColor: "rgba(0,31,63,0.1)",
+          borderRadius: 8,
+          padding: 16,
+          marginBottom: 12,
+          justifyContent: "center",
+        }}
+      >
+        <Text style={{ color: "#001F3F", fontWeight: "700", fontSize: 16 }}>{copy.ydc.title}</Text>
       </Pressable>
 
       <Pressable

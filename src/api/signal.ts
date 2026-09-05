@@ -1,5 +1,8 @@
 export const REQUEST_TIMEOUT_MS = 45_000;
 
+/** List endpoints fail faster and never retry transport: a stale full-screen wait is worse than a retry prompt. */
+export const LIST_TIMEOUT_MS = 20_000;
+
 export class AbortedError extends Error {
   constructor() {
     super("aborted");

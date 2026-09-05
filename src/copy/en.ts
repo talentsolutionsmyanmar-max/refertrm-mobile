@@ -93,6 +93,12 @@ export const copy = {
     stale: "Saved content. It may be out of date.",
   },
 
+  ydc: {
+    eyebrow: "YDC",
+    title: "Youth Development Center",
+    detail: "Grade path and practice on ReferTRM.com. Opens in your browser.",
+  },
+
   errors: {
     generic: "Something went wrong. Try again.",
     notFound: "Not found.",
@@ -100,6 +106,7 @@ export const copy = {
     timeout: "ReferTRM is taking longer than expected.",
     transport: "ReferTRM cannot connect on this network.",
     loading: "Loading…",
+    connecting: "Connecting…",
     retry: "Try again",
   },
 } as const;
