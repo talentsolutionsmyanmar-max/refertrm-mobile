@@ -1,16 +1,13 @@
 import { useEffect } from "react";
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeAction, HomeModule } from "../../src/components/home/HomeModule";
 import { loadAcademy, loadJobs } from "../../src/api/load";
-import { openStartInBrowser } from "../../src/linking/start";
+import { GAME_URL, LOGIN_TRINITY, MAYA_URL, openStartInBrowser, openWeb } from "../../src/linking/start";
 import { copy } from "../../src/copy/en";
 import { color, tap } from "../../src/theme";
-
-const GAME_URL = "https://www.refertrm.com/eq/game";
-const MAYA_URL = "https://www.refertrm.com/eq/maya";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -46,8 +43,8 @@ export default function HomeScreen() {
         detail="Sign in in your browser to continue. This app will not claim progress until it refreshes."
       >
         <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
-          <HomeAction label="Continue Career Game" tone="navy" onPress={() => void Linking.openURL(GAME_URL)} />
-          <HomeAction label="Ask Maya" tone="gold" onPress={() => void Linking.openURL(MAYA_URL)} />
+          <HomeAction label="Continue Career Game" tone="navy" onPress={() => void openWeb(GAME_URL)} />
+          <HomeAction label="Ask Maya" tone="gold" onPress={() => void openWeb(MAYA_URL)} />
         </View>
       </HomeModule>
 
@@ -56,7 +53,13 @@ export default function HomeScreen() {
           <HomeModule fill eyebrow="Earn" title="— MMK" detail="Shown after verification" accent="gold" />
         </View>
         <View style={{ flex: 1 }}>
-          <HomeModule fill eyebrow="Trinity" title="Career DNA" detail="Sign in to view your verified readiness" accent="teal" />
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Trinity Career DNA. Opens sign in on ReferTRM.com."
+            onPress={() => void openWeb(LOGIN_TRINITY)}
+          >
+            <HomeModule fill eyebrow="Trinity" title="Career DNA" detail="Sign in to view your verified readiness" accent="teal" />
+          </Pressable>
         </View>
       </View>
 

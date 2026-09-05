@@ -1,10 +1,9 @@
-import { Linking, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeModule } from "../../src/components/home/HomeModule";
 import { ModuleState } from "../../src/components/states/ModuleState";
+import { REFERRALS_URL, openWeb } from "../../src/linking/start";
 import { color } from "../../src/theme";
-
-const REFERRALS_URL = "https://www.refertrm.com/eq/referrals";
 
 export default function EarnScreen() {
   const insets = useSafeAreaInsets();
@@ -40,7 +39,7 @@ export default function EarnScreen() {
         title="Referral activity requires sign-in"
         detail="Open ReferTRM.com to view eligibility, earned, pending and paid statuses. This app does not estimate a balance."
         actionLabel="View referrals on ReferTRM.com"
-        onAction={() => void Linking.openURL(REFERRALS_URL)}
+        onAction={() => void openWeb(REFERRALS_URL)}
       />
     </ScrollView>
   );
