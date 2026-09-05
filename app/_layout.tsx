@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import * as Linking from "expo-linking";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { parseDeepLink } from "../src/linking/paths";
+import { isHttpsStartUrl, openStartInBrowser } from "../src/linking/start";
 import { copy } from "../src/copy/en";
 
 export default function RootLayout() {
@@ -24,6 +25,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     function onUrl(url: string) {
+      if (isHttpsStartUrl(url)) {
+        void openStartInBrowser();
+        return;
+      }
       const parsed = parseDeepLink(url);
       if (parsed.type === "start") {
         router.push("/start");

@@ -1,4 +1,5 @@
 import { catalog } from "../cache/catalog";
+import { hydrateCatalogFromFile, persistCatalogToFile } from "../storage/fileKv";
 import { academyGeneration, jobCanonicalCommit, jobDetailGeneration, jobsGeneration, moduleGeneration } from "../cache/generation";
 import { fetchAcademy, fetchJob, fetchJobs, fetchModule } from "./client";
 import {
@@ -81,6 +82,7 @@ function composeJob(meta: JobListItem | undefined, body: { description: string |
 }
 
 export async function loadJobs(signal?: AbortSignal): Promise<JobsLoad> {
+  await hydrateCatalogFromFile();
   const ticket = jobsGeneration.issue();
   const cached = catalog.snapshot();
   try {
@@ -96,6 +98,7 @@ export async function loadJobs(signal?: AbortSignal): Promise<JobsLoad> {
       return { jobs: latest.jobs, fromCache, syncedAt: latest.jobsSyncedAt };
     }
     catalog.writeJobs(jobs);
+    void persistCatalogToFile();
     return { jobs, fromCache: false, syncedAt: Date.now() };
   } catch (error) {
     if (isAbortError(error)) throw error;
@@ -140,6 +143,7 @@ export async function loadJob(id: string, signal?: AbortSignal): Promise<JobDeta
 }
 
 export async function loadAcademy(signal?: AbortSignal): Promise<AcademyLoad> {
+  await hydrateCatalogFromFile();
   const ticket = academyGeneration.issue();
   const cached = catalog.snapshot();
   try {
@@ -155,6 +159,7 @@ export async function loadAcademy(signal?: AbortSignal): Promise<AcademyLoad> {
       return { modules: latest.modules, fromCache, syncedAt: latest.academySyncedAt };
     }
     catalog.writeAcademy(modules);
+    void persistCatalogToFile();
     return { modules, fromCache: false, syncedAt: Date.now() };
   } catch (error) {
     if (isAbortError(error)) throw error;
