@@ -1,39 +1,33 @@
 import { View } from "react-native";
 import { color } from "../theme";
 
-/** Chevron from two 1.5px bars. No SVG. */
+/** Chevron — shaft + rotated head. Position with left/top only; rotate is the only transform. */
 export function ArrowGlyph({ tone = "ink" }: { tone?: "ink" | "gold" | "inverse" }) {
   const c = tone === "gold" ? color.gold : tone === "inverse" ? color.gold : color.ink;
   return (
-    <View style={{ width: 11, height: 11, alignItems: "center", justifyContent: "center" }}>
+    <View style={{ width: 11, height: 11 }}>
       <View
         style={{
           position: "absolute",
-          width: 7,
-          height: 1.5,
-          backgroundColor: c,
-          borderRadius: 1,
-          transform: [{ rotate: "45deg" }, { translateX: 1.5 }, { translateY: 1.5 }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          width: 7,
-          height: 1.5,
-          backgroundColor: c,
-          borderRadius: 1,
-          transform: [{ rotate: "-45deg" }, { translateX: 1.5 }, { translateY: -1.5 }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
+          left: 0,
+          top: 5,
           width: 8,
           height: 1.5,
           backgroundColor: c,
           borderRadius: 1,
-          left: 0,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: 4,
+          top: 2.2,
+          width: 6,
+          height: 6,
+          borderRightWidth: 1.5,
+          borderTopWidth: 1.5,
+          borderColor: c,
+          transform: [{ rotate: "45deg" }],
         }}
       />
     </View>

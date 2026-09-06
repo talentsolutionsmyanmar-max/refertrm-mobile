@@ -23,9 +23,14 @@ export function classifyJobBand(job: JobListItem): HeroBand | null {
   return null;
 }
 
-/** Minute-bucket seed — survives cold start, stable within a minute (no remount flicker). */
+/**
+ * Second-granularity seed for mount-time hero pick.
+ * Home holds this in a useRef so it is stable for one mount (no remount flicker)
+ * but a cold start or remount gets a new seed. Strict band order across launches
+ * is not guaranteed without persisted state (not authorised on the launch path).
+ */
 export function heroSeed(nowMs: number = Date.now()): number {
-  return Math.floor(nowMs / 60_000);
+  return Math.floor(nowMs / 1_000);
 }
 
 export function bandForSeed(seed: number): HeroBand {
@@ -39,7 +44,7 @@ export function bandIndex(band: HeroBand): number {
 
 /**
  * Pick one role for the hero from the preferred band (then next bands).
- * Within a band, index by Math.floor(seed / 4) so consecutive minutes cycle roles.
+ * Within a band, index by Math.floor(seed / 4) so consecutive band cycles advance roles.
  * Deterministic — no Math.random.
  */
 export function pickHeroJob(jobs: JobListItem[], seed: number): JobListItem | null {

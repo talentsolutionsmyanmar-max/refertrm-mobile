@@ -140,10 +140,28 @@ test("G10 HERO_BAND_ORDER.length equals the rendered dot count", () => {
   assert.equal(/band === "manager" \? 0/.test(home), false);
 });
 
-test("F3 heroSeed is minute-bucketed and stable within a minute", () => {
+test("F3 heroSeed is second-granularity; adjacent seconds differ", () => {
   const t = 1_700_000_000_000;
-  assert.equal(heroSeed(t), heroSeed(t + 30_000));
-  assert.notEqual(heroSeed(t), heroSeed(t + 60_000));
+  assert.equal(heroSeed(t), Math.floor(t / 1_000));
+  assert.equal(heroSeed(t), heroSeed(t + 500));
+  assert.notEqual(heroSeed(t), heroSeed(t + 1_000));
+});
+
+test("G16 two seeds one second apart yield different hero ids (>=2 roles/band)", () => {
+  for (const band of HERO_BAND_ORDER) {
+    assert.ok(
+      FIXTURE.filter((j) => classifyJobBand(j) === band).length >= 2,
+      `${band} needs >=2 roles in fixture`,
+    );
+  }
+  const t = 1_700_000_000_000;
+  const s0 = heroSeed(t);
+  const s1 = heroSeed(t + 1_000);
+  assert.equal(s1 - s0, 1);
+  const a = pickHeroJob(FIXTURE, s0);
+  const b = pickHeroJob(FIXTURE, s1);
+  assert.ok(a && b);
+  assert.notEqual(a!.id, b!.id);
 });
 
 test("YDC glyph is a raster Image, not an empty spacer", () => {
@@ -191,5 +209,49 @@ test("no Math.random call and no module-scope visit counter on Home", () => {
   const pick = readFileSync(resolve("src/home/pickHeroJob.ts"), "utf8");
   assert.equal(/Math\.random\s*\(/.test(home + pick), false);
   assert.equal(/heroVisitSeq/.test(home), false);
-  assert.match(home, /heroSeed\(/);
+  assert.match(home, /useRef\(Math\.floor\(Date\.now\(\) \/ 1000\)\)\.current/);
+});
+
+test("G13 game image wrapper has zIndex 0 and both right-corner radii", () => {
+  const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+  assert.match(home, /game-card-faded\.webp/);
+  assert.equal(/game-card-portrait\.webp/.test(home), false);
+  // Absolute image wrapper carries zIndex: 0 and both right radii.
+  assert.match(
+    home,
+    /left:\s*"46%"[\s\S]{0,220}zIndex:\s*0[\s\S]{0,220}borderTopRightRadius:\s*radii\.r3[\s\S]{0,120}borderBottomRightRadius:\s*radii\.r3/,
+  );
+  const asset = readFileSync(resolve("assets/home/game-card-faded.webp"));
+  assert.ok(asset.length > 10_000 && asset.length < 40_000, `unexpected size ${asset.length}`);
+});
+
+test("G14 no backgroundColor on Pressable direct child of Link asChild", () => {
+  const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+  const linkBlocks = home.split(/<Link\b/);
+  for (const block of linkBlocks.slice(1)) {
+    if (!/\basChild\b/.test(block)) continue;
+    const pressable = /<Pressable\b([\s\S]*?)>/.exec(block);
+    assert.ok(pressable, "asChild Link missing Pressable");
+    const attrs = pressable![1];
+    assert.equal(
+      /backgroundColor/.test(attrs),
+      false,
+      `Pressable under Link asChild still has backgroundColor:\n${attrs.slice(0, 240)}`,
+    );
+  }
+});
+
+test("G15 no translateX or translateY in glyphs transform arrays", () => {
+  const glyphs = readFileSync(resolve("src/home/glyphs.tsx"), "utf8");
+  assert.equal(/translateX/.test(glyphs), false);
+  assert.equal(/translateY/.test(glyphs), false);
+  assert.match(glyphs, /transform:\s*\[\s*\{\s*rotate:\s*"45deg"\s*\}\s*\]/);
+});
+
+test("G17 hero chip label derives from classifyJobBand, not job.level", () => {
+  const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+  assert.match(home, /classifyJobBand\(job\)/);
+  assert.match(home, /band\.toUpperCase\(\)/);
+  assert.equal(/level\.toUpperCase\(\)/.test(home), false);
+  assert.equal(/job\.level/.test(home), false);
 });

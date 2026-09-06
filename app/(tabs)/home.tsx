@@ -8,7 +8,13 @@ import { isTimeoutError, isTransportError } from "../../src/api/signal";
 import { errorMessage } from "../../src/copy/error";
 import { Skeleton } from "../../src/components/ui";
 import { ArrowGlyph, ConstellationGlyph, PlayGlyph } from "../../src/home/glyphs";
-import { bandForSeed, bandIndex, heroSeed, HERO_BAND_ORDER, pickHeroJob } from "../../src/home/pickHeroJob";
+import {
+  bandForSeed,
+  bandIndex,
+  classifyJobBand,
+  HERO_BAND_ORDER,
+  pickHeroJob,
+} from "../../src/home/pickHeroJob";
 import {
   CV_URL,
   GAME_URL,
@@ -95,7 +101,7 @@ function HeroRoleCard({
   openCount: number | null;
   bandIndex: number;
 }) {
-  const level = (job.level ?? "").trim();
+  const band = classifyJobBand(job);
   const salary = job.salaryDisplay?.trim() || null;
   const location = job.location?.trim() || copy.jobs.locationUnknown;
   const titleMatch = /^(.*?)\s*—\s*Hiring\s+(\d+)\s+positions?\s*$/i.exec(job.title);
@@ -106,122 +112,126 @@ function HeroRoleCard({
       <Pressable
         accessibilityRole="link"
         accessibilityLabel={`${title}. ${location}. ${salary ?? ""}`}
-        style={{
-          width: "100%",
-          backgroundColor: color.navy,
-          borderColor: color.navy,
-          borderWidth: 1,
-          borderRadius: radii.r3,
-          padding: 14,
-          minHeight: 178,
-          overflow: "hidden",
-        }}
+        style={({ pressed }) => ({ opacity: pressed ? 0.88 : 1 })}
       >
-        <RoleRings />
-        <View style={{ zIndex: 1, flex: 1, justifyContent: "space-between" }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 7 }}>
-            <Text style={{ color: color.gold, fontFamily: font.mono, fontSize: 7.5, letterSpacing: 0.08 * 7.5 }}>
-              {copy.home.roleLabel}
-            </Text>
-            <ArrowButton tone="inverse" />
-          </View>
-          <View>
-            <Text
-              style={{
-                color: color.white,
-                fontFamily: font.display,
-                fontSize: 21,
-                lineHeight: 21 * 1.06,
-                letterSpacing: -0.04 * 21,
-                marginTop: 7,
-                maxWidth: "70%",
-              }}
-              numberOfLines={3}
-            >
-              {title}
-            </Text>
-            <Text style={{ color: "#b9c6d3", fontFamily: font.body, fontSize: 9, marginTop: 3 }}>{location}</Text>
-            {salary ? (
+        <View
+          style={{
+            width: "100%",
+            backgroundColor: color.navy,
+            borderColor: color.navy,
+            borderWidth: 1,
+            borderRadius: radii.r3,
+            padding: 14,
+            minHeight: 178,
+            overflow: "hidden",
+          }}
+        >
+          <RoleRings />
+          <View style={{ zIndex: 1, flex: 1, justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 7 }}>
+              <Text style={{ color: color.gold, fontFamily: font.mono, fontSize: 7.5, letterSpacing: 0.08 * 7.5 }}>
+                {copy.home.roleLabel}
+              </Text>
+              <ArrowButton tone="inverse" />
+            </View>
+            <View>
               <Text
                 style={{
-                  color: color.gold,
+                  color: color.white,
                   fontFamily: font.display,
                   fontSize: 21,
+                  lineHeight: 21 * 1.06,
                   letterSpacing: -0.04 * 21,
-                  marginTop: 4,
-                  fontVariant: ["tabular-nums"],
+                  marginTop: 7,
+                  maxWidth: "70%",
                 }}
+                numberOfLines={3}
               >
-                {salary}
+                {title}
               </Text>
-            ) : null}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 7 }}>
-              {level ? (
-                <View
-                  style={{
-                    minHeight: 18,
-                    paddingHorizontal: 7,
-                    borderRadius: radii.pill,
-                    borderWidth: 1,
-                    borderColor: color.lineInverse,
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text style={{ color: "#dbe5ed", fontFamily: font.mono, fontSize: 6.5, letterSpacing: 0.035 * 6.5 }}>
-                    {level.toUpperCase()}
-                  </Text>
-                </View>
-              ) : null}
+              <Text style={{ color: "#b9c6d3", fontFamily: font.body, fontSize: 9, marginTop: 3 }}>{location}</Text>
               {salary ? (
-                <View
+                <Text
                   style={{
-                    minHeight: 18,
-                    paddingHorizontal: 7,
-                    borderRadius: radii.pill,
-                    borderWidth: 1,
-                    borderColor: color.lineInverse,
-                    justifyContent: "center",
+                    color: color.gold,
+                    fontFamily: font.display,
+                    fontSize: 21,
+                    letterSpacing: -0.04 * 21,
+                    marginTop: 4,
+                    fontVariant: ["tabular-nums"],
                   }}
                 >
-                  <Text style={{ color: "#dbe5ed", fontFamily: font.mono, fontSize: 6.5, letterSpacing: 0.035 * 6.5 }}>
-                    {copy.home.salaryShown}
-                  </Text>
-                </View>
+                  {salary}
+                </Text>
               ) : null}
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 7 }}>
-              {HERO_BAND_ORDER.map((_, i) => (
-                <View
-                  key={i}
-                  style={
-                    i === bandIndex
-                      ? {
-                          width: 12,
-                          height: 4,
-                          borderRadius: radii.pill,
-                          backgroundColor: color.gold,
-                        }
-                      : {
-                          width: 4,
-                          height: 4,
-                          borderRadius: 2,
-                          backgroundColor: "rgba(255,255,255,0.28)",
-                        }
-                  }
-                />
-              ))}
-              <Text
-                style={{
-                  marginLeft: 2,
-                  color: "#8fa3b5",
-                  fontFamily: font.mono,
-                  fontSize: 6.5,
-                  letterSpacing: 0.07 * 6.5,
-                }}
-              >
-                {copy.home.visitHint}
-                {openCount != null ? ` · ${copy.home.openRoles(openCount)}` : ""}
-              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 7 }}>
+                {band ? (
+                  <View
+                    style={{
+                      minHeight: 18,
+                      paddingHorizontal: 7,
+                      borderRadius: radii.pill,
+                      borderWidth: 1,
+                      borderColor: color.lineInverse,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ color: "#dbe5ed", fontFamily: font.mono, fontSize: 6.5, letterSpacing: 0.035 * 6.5 }}>
+                      {band.toUpperCase()}
+                    </Text>
+                  </View>
+                ) : null}
+                {salary ? (
+                  <View
+                    style={{
+                      minHeight: 18,
+                      paddingHorizontal: 7,
+                      borderRadius: radii.pill,
+                      borderWidth: 1,
+                      borderColor: color.lineInverse,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ color: "#dbe5ed", fontFamily: font.mono, fontSize: 6.5, letterSpacing: 0.035 * 6.5 }}>
+                      {copy.home.salaryShown}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 7 }}>
+                {HERO_BAND_ORDER.map((_, i) => (
+                  <View
+                    key={i}
+                    style={
+                      i === bandIndex
+                        ? {
+                            width: 12,
+                            height: 4,
+                            borderRadius: radii.pill,
+                            backgroundColor: color.gold,
+                          }
+                        : {
+                            width: 4,
+                            height: 4,
+                            borderRadius: 2,
+                            backgroundColor: "rgba(255,255,255,0.28)",
+                          }
+                    }
+                  />
+                ))}
+                <Text
+                  style={{
+                    marginLeft: 2,
+                    color: "#8fa3b5",
+                    fontFamily: font.mono,
+                    fontSize: 6.5,
+                    letterSpacing: 0.07 * 6.5,
+                  }}
+                >
+                  {copy.home.visitHint}
+                  {openCount != null ? ` · ${copy.home.openRoles(openCount)}` : ""}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -405,23 +415,25 @@ function JobsActionRow({ openCount }: { openCount: number | null }) {
         <Pressable
           accessibilityRole="link"
           accessibilityLabel={copy.home.seeAllJobs}
-          style={({ pressed }) => ({
-            minHeight: 42,
-            width: "100%",
-            backgroundColor: color.gold,
-            borderRadius: radii.pill,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 7,
-            opacity: pressed ? 0.88 : 1,
-          })}
+          style={({ pressed }) => ({ opacity: pressed ? 0.88 : 1 })}
         >
-          <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, borderRadius: radii.pill }} />
-          <Text style={{ color: color.navyDeep, fontFamily: font.bodySemi, fontSize: 12, fontWeight: "700" }}>
-            {copy.home.seeAllJobs}
-          </Text>
-          <ArrowGlyph tone="ink" />
+          <View
+            style={{
+              minHeight: 42,
+              width: "100%",
+              backgroundColor: color.gold,
+              borderRadius: radii.pill,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 7,
+            }}
+          >
+            <Text style={{ color: color.navyDeep, fontFamily: font.bodySemi, fontSize: 12, fontWeight: "700" }}>
+              {copy.home.seeAllJobs}
+            </Text>
+            <ArrowGlyph tone="ink" />
+          </View>
         </Pressable>
       </Link>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingLeft: 2 }}>
@@ -482,7 +494,8 @@ function DoorCard({
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const seed = useRef(heroSeed()).current;
+  // Once per mount, second granularity — cold start / remount gets a new role; stable within mount.
+  const seed = useRef(Math.floor(Date.now() / 1000)).current;
 
   const jobsQuery = useQuery({
     queryKey: ["jobs"],
@@ -581,56 +594,60 @@ export default function HomeScreen() {
             <Pressable
               accessibilityRole="link"
               accessibilityLabel={copy.home.learnTitle}
-              style={{
-                flex: 1,
-                minHeight: 178,
-                borderWidth: 1,
-                borderColor: color.line,
-                borderRadius: radii.r3,
-                backgroundColor: color.paper,
-                padding: 11,
-                overflow: "hidden",
-              }}
+              style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.88 : 1 })}
             >
-              <Image
-                source={require("../../assets/home/classroom-card.webp")}
-                style={{ position: "absolute", right: 3, bottom: 5, width: 88, height: 99, zIndex: 0 }}
-                resizeMode="contain"
-              />
-              <View style={{ zIndex: 1, maxWidth: "56%" }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Text style={{ color: color.teal, fontFamily: font.mono, fontSize: 7.5, letterSpacing: 0.08 * 7.5 }}>
-                    {copy.home.learnLabel}
-                  </Text>
-                  <ArrowButton />
-                </View>
-                <Text
-                  style={{
-                    marginTop: 8,
-                    fontFamily: font.display,
-                    fontSize: 15,
-                    lineHeight: 15 * 1.06,
-                    letterSpacing: -0.035 * 15,
-                    color: color.ink,
-                  }}
-                >
-                  {copy.home.learnTitle}
-                </Text>
-                {lessonCount != null ? (
-                  <View style={{ marginTop: 8, borderTopWidth: 1, borderTopColor: color.line, paddingTop: 8 }}>
-                    <Text
-                      style={{
-                        fontFamily: font.mono,
-                        fontSize: 6,
-                        fontWeight: "500",
-                        color: color.slate,
-                        letterSpacing: 0.04 * 6,
-                      }}
-                    >
-                      {copy.home.learnLessons(lessonCount)}
+              <View
+                style={{
+                  flex: 1,
+                  minHeight: 178,
+                  borderWidth: 1,
+                  borderColor: color.line,
+                  borderRadius: radii.r3,
+                  backgroundColor: color.paper,
+                  padding: 11,
+                  overflow: "hidden",
+                }}
+              >
+                <Image
+                  source={require("../../assets/home/classroom-card.webp")}
+                  style={{ position: "absolute", right: 3, bottom: 5, width: 88, height: 99, zIndex: 0 }}
+                  resizeMode="contain"
+                />
+                <View style={{ zIndex: 1, maxWidth: "56%" }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <Text style={{ color: color.teal, fontFamily: font.mono, fontSize: 7.5, letterSpacing: 0.08 * 7.5 }}>
+                      {copy.home.learnLabel}
                     </Text>
+                    <ArrowButton />
                   </View>
-                ) : null}
+                  <Text
+                    style={{
+                      marginTop: 8,
+                      fontFamily: font.display,
+                      fontSize: 15,
+                      lineHeight: 15 * 1.06,
+                      letterSpacing: -0.035 * 15,
+                      color: color.ink,
+                    }}
+                  >
+                    {copy.home.learnTitle}
+                  </Text>
+                  {lessonCount != null ? (
+                    <View style={{ marginTop: 8, borderTopWidth: 1, borderTopColor: color.line, paddingTop: 8 }}>
+                      <Text
+                        style={{
+                          fontFamily: font.mono,
+                          fontSize: 6,
+                          fontWeight: "500",
+                          color: color.slate,
+                          letterSpacing: 0.04 * 6,
+                        }}
+                      >
+                        {copy.home.learnLessons(lessonCount)}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
               </View>
             </Pressable>
           </Link>
@@ -650,9 +667,21 @@ export default function HomeScreen() {
               overflow: "hidden",
             }}
           >
-            <View style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: "46%", overflow: "hidden" }}>
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: "46%",
+                overflow: "hidden",
+                zIndex: 0,
+                borderTopRightRadius: radii.r3,
+                borderBottomRightRadius: radii.r3,
+              }}
+            >
               <Image
-                source={require("../../assets/home/game-card-portrait.webp")}
+                source={require("../../assets/home/game-card-faded.webp")}
                 style={{ width: "100%", height: "100%" }}
                 resizeMode="cover"
               />
