@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { accents, day, majors, night, radii, shadow, tap, type, type ThemeColors, type ThemeName } from "../theme";
+import { accents, day, majors, night, radii, shadow, tap, type, type RNShadow, type ThemeColors, type ThemeName } from "../theme";
 import { getDeviceSettings, setDeviceSetting } from "../../src/storage/settings";
 
 /**
@@ -19,7 +19,8 @@ export type Theme = {
   radii: typeof radii;
   type: typeof type;
   tap: number;
-  shadow: string;
+  /** RN-shaped shadow (never a CSS string). On dark themes the 1px line border carries the card edge — see HomeModule. */
+  shadow: RNShadow;
   /**
    * H2 — derived alphas. tokens.json has no skeleton/tint token, and T1 forbids
    * inventing one — so these are DERIVED at runtime from existing tokens: the
@@ -33,7 +34,7 @@ export type Theme = {
     /** Card label strip: a whisper of ink over the panel. */
     labelStripBg: string;
     /** Banner: gold accent fill (a light surface in both themes). */
-    goldSoftBg: string;
+    goldFillBg: string;
     /** Banner text is always the dark ink — the gold fill is light in both themes. */
     bannerText: string;
     /**
@@ -69,8 +70,8 @@ function derive(name: ThemeName): Theme["derived"] {
     labelStripBg: hexToRgba(c.ink, name === "night" ? 0.45 : 0.55),
     // The banner is a gold FILL (a light surface in both themes) — so its text
     // is always the dark ink, never the theme's ink (which is white on night).
-    // goldSoftBg is the fill; bannerText is the dark ink that reads on it.
-    goldSoftBg: hexToRgba(accents.gold, name === "night" ? 0.92 : 0.55),
+    // goldFillBg is the fill; bannerText is the dark ink that reads on it.
+    goldFillBg: hexToRgba(accents.gold, name === "night" ? 0.92 : 0.55),
     bannerText: day.ink,
     // Accent text: on day the light accents fail on white panels even large,
     // and tokens.json ships no deep variant — so accent text resolves to ink on

@@ -37,7 +37,7 @@ export function Card({
           style={{
             paddingHorizontal: 16,
             paddingVertical: 10,
-            backgroundColor: accent === "gold" ? t.derived.goldSoftBg : t.derived.labelStripBg,
+            backgroundColor: accent === "gold" ? t.derived.goldFillBg : t.derived.labelStripBg,
             borderBottomWidth: 1,
             borderBottomColor: accent === "gold" ? t.accents.gold : t.colors.line,
           }}
@@ -135,7 +135,7 @@ export function Banner({ text }: { text: string }) {
         marginTop: 8,
         padding: 12,
         borderRadius: 8,
-        backgroundColor: t.derived.goldSoftBg,
+        backgroundColor: t.derived.goldFillBg,
       }}
     >
       {/* The banner is a gold fill (light in both themes) — text is dark ink. */}

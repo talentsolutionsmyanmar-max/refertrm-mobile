@@ -226,8 +226,11 @@ function HeroJobSlot() {
         accessibilityLabel={`${heroTitle}, ${job.location || copy.jobs.locationUnknown}. ${copy.home.primary.label}.`}
         style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}
       >
-        {/* T3 — panel surface, radius lg, shadow from the active theme, NO border. */}
-        <View style={{ borderRadius: radii.lg, backgroundColor: t.colors.panel, padding: 16, shadowColor: "#000" /* lint-ok — shadow base, matches the tokens' rgba(0,0,0) shadow */, shadowOpacity: t.name === "night" ? 0.45 : 0.16, shadowRadius: t.name === "night" ? 40 : 32, shadowOffset: { width: 0, height: t.name === "night" ? 14 : 12 }, elevation: 6 }}>
+        {/* T3/J1 — panel surface, radius lg, theme shadow (RN-shaped) + a 1px line
+            border. On a dark theme an elevation shadow cannot separate a dark card
+            from a darker page (nothing below #070B18), so the border does the work
+            the shadow cannot. The hero has a VISIBLE edge. */}
+        <View style={{ borderRadius: radii.lg, backgroundColor: t.colors.panel, padding: 16, borderWidth: 1, borderColor: t.colors.line, ...t.shadow }}>
           <Text style={{ color: t.colors.dim, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
           {/* T3 — role title ink at display 26. */}
           <Text style={{ color: t.colors.ink, ...type.display, fontWeight: "800", marginTop: 8 }}>{heroTitle}</Text>
@@ -250,10 +253,30 @@ function HeroJobSlot() {
           <Text style={{ color: t.colors.mut, ...type.body, marginTop: 10 }}>
             {job.location || copy.jobs.locationUnknown}
           </Text>
-          {/* T3 — SALARY in gold, its own line, the largest number on the screen. */}
-          <Text style={{ color: t.derived.accentTextGold, ...type.standard, fontWeight: "800", marginTop: 6 }}>
-            {job.salaryDisplay || copy.home.heroJob.salaryHidden}
-          </Text>
+          {/* T3/J2 — SALARY in gold, its own line, the largest number on screen.
+              Night: gold text on the dark panel. Day: a gold PILL with dark ink
+              text (gold text on a white panel is 1.44:1 — invisible), consistent
+              with the headcount pill. Gold carries the emphasis in both themes. */}
+          {t.name === "night" ? (
+            <Text style={{ color: t.derived.accentTextGold, ...type.standard, fontWeight: "800", marginTop: 6 }}>
+              {job.salaryDisplay || copy.home.heroJob.salaryHidden}
+            </Text>
+          ) : (
+            <View
+              style={{
+                alignSelf: "flex-start",
+                marginTop: 6,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: radii.pill,
+                backgroundColor: t.derived.goldFillBg,
+              }}
+            >
+              <Text style={{ color: t.derived.bannerText, ...type.standard, fontWeight: "800" }}>
+                {job.salaryDisplay || copy.home.heroJob.salaryHidden}
+              </Text>
+            </View>
+          )}
         </View>
       </Pressable>
     </Link>

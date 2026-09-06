@@ -63,9 +63,24 @@ export const day: ThemeColors = {
   glow: "rgba(14,165,164,0.35)",
 };
 
-export const shadow = {
-  night: "0 14px 40px rgba(0,0,0,0.45)",
-  day: "0 12px 32px rgba(60,72,140,0.16)",
+/**
+ * Shadow — RN-consumable, never a CSS box-shadow string (RN cannot read
+ * "0 14px 40px rgba(...)"). Structured props only. On a dark theme an Android
+ * elevation shadow cannot separate a dark card from a darker page (nothing is
+ * below #070B18), so elevation is minimal and the 1px `line` border carries the
+ * card edge — see HomeModule/home.tsx. The token records intent for platforms
+ * that honour it; the gate asserts it is RN-shaped, never a CSS string.
+ */
+export type RNShadow = {
+  shadowColor: string;
+  shadowOffset: { width: number; height: number };
+  shadowOpacity: number;
+  shadowRadius: number;
+  elevation: number;
+};
+export const shadow: Record<"night" | "day", RNShadow> = {
+  night: { shadowColor: "#000000", shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.45, shadowRadius: 40, elevation: 4 },
+  day: { shadowColor: "#3C488C", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 32, elevation: 3 },
 } as const;
 
 /**

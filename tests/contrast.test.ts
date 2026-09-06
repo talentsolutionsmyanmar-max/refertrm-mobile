@@ -99,7 +99,7 @@ function derived(name: "night" | "day") {
   return {
     skeletonBg: inkA(name === "night" ? 0.42 : 0.55),
     labelStripBg: inkA(name === "night" ? 0.45 : 0.55),
-    goldSoftBg: goldA(name === "night" ? 0.92 : 0.55),
+    goldFillBg: goldA(name === "night" ? 0.92 : 0.55),
     bannerText: "#141B33", // day.ink — the banner is a gold fill (light), so its text is dark ink on both themes
   };
 }
@@ -132,10 +132,16 @@ function pairsFor(themeName: "night" | "day"): Pair[] {
           // day: accent text IS ink — measure that, not the invisible accent.
           { name: "accent text (incl. hero salary) resolves to ink on day (large/bold)", fg: c.ink, bg: c.panel, kind: "large" as const },
         ]),
-    { name: "banner text (dark ink) on goldSoft banner", fg: d.bannerText, bg: d.goldSoftBg, kind: "body" },
+    { name: "banner text (dark ink) on goldSoft banner", fg: d.bannerText, bg: d.goldFillBg, kind: "body" },
     // Large text (>= 3.0)
     { name: "ink display 26 on panel (hero title)", fg: c.ink, bg: c.panel, kind: "large" },
     { name: "hero salary (large/bold) — accentTextGold: gold on night, ink on day", fg: themeName === "night" ? accents.gold : c.ink, bg: c.panel, kind: "large" },
+    // J2 — the day salary is a gold PILL with dark ink text (gold text on a white
+    // panel is 1.44:1 — invisible). Night keeps gold text on the dark panel.
+    // Both variants are gated, so the emphasis carrier survives both themes.
+    ...(themeName === "day"
+      ? [{ name: "hero salary DAY — dark ink on gold pill fill", fg: d.bannerText, bg: d.goldFillBg, kind: "large" as const }]
+      : []),
     // Card FILLS (panel on page, panel2 on panel) are backgrounds, not UI shapes
     // conveying information. WCAG's 3:1 shape rule governs components that carry
     // meaning (buttons, inputs, content-placeholder bars) — not a card's tonal
@@ -148,7 +154,8 @@ function pairsFor(themeName: "night" | "day"): Pair[] {
     { name: "card label strip on panel", fg: d.labelStripBg, bg: c.panel, kind: "shape" },
     // Buttons
     { name: "bg0 text on ink (RetryState button)", fg: c.bg0, bg: c.ink, kind: "body" },
-    { name: "ink text on bg0 (active Chip)", fg: c.ink, bg: c.panel, kind: "body" },
+    // Active chip: ink fill, page-colored (bg0) text on it.
+    { name: "bg0 text on ink fill (active Chip)", fg: c.bg0, bg: c.ink, kind: "body" },
   ];
 }
 

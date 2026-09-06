@@ -57,6 +57,23 @@ test("T1 — src/theme.ts records the upstream tokens.json source hash", () => {
   assert.ok(theme.includes(TOKENS_JSON_SHA256), "theme.ts must record the tokens.json sha256 it was transcribed from");
 });
 
+test("J1 — the shadow token is RN-shaped, never a CSS box-shadow string", () => {
+  // RN consumes shadowColor/Offset/Opacity/Radius + elevation. A CSS string like
+  // "0 14px 40px rgba(...)" is silently ignored — an absent token is better.
+  assert.equal(/shadow[^=]*=\s*\{[^}]*"0 \d+px/.test(theme), false, "shadow must not be a CSS string");
+  assert.ok(theme.includes("shadowColor"), "RN shadow needs shadowColor");
+  assert.ok(theme.includes("shadowOffset"), "RN shadow needs shadowOffset");
+  assert.ok(theme.includes("shadowOpacity"), "RN shadow needs shadowOpacity");
+  assert.ok(theme.includes("shadowRadius"), "RN shadow needs shadowRadius");
+  assert.ok(theme.includes("elevation"), "RN shadow needs Android elevation");
+  // On a dark theme an elevation shadow cannot separate a dark card from a
+  // darker page — the 1px line border carries the edge. Assert the hero carries it.
+  const home = readFileSync(join(root, "app/(tabs)/home.tsx"), "utf8");
+  const heroIdx = home.indexOf("T3/J1");
+  const heroBlock = home.slice(heroIdx, heroIdx + 600);
+  assert.ok(heroBlock.includes("borderWidth: 1"), "hero card must carry the 1px line border (shadow cannot work on dark-on-dark)");
+});
+
 test("T1 — type scale is a faithful mirror (no 16; display 26 / standard 20 / body 15 / bodySm 13 / monoLabel 11.5)", () => {
   assert.ok(theme.includes("display: { fontSize: 26, lineHeight: 34"), "display 26/34");
   assert.ok(theme.includes("standard: { fontSize: 20, lineHeight: 28"), "standard 20/28");
