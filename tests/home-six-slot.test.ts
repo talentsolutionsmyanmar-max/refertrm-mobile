@@ -121,6 +121,25 @@ test("C3 — the no-fee line is state-independent (adjacent to PRIMARY, not insi
     "no-fee line has exactly one source");
 });
 
+test("FIX-002 gate — home.tsx consumes all four hero copy keys (a dropped branch fails)", () => {
+  // The bug class is "a state nobody renders." Assert all four are referenced.
+  for (const key of ["heroJob.empty", "heroJob.error", "heroJob.slow", "heroJob.retry"]) {
+    assert.ok(home.includes(`copy.home.${key}`), `home.tsx must consume copy.home.${key}`);
+  }
+});
+
+test("FIX-002 — hero has three null-job states (empty / error / slow), none conflated, none silent", () => {
+  assert.ok(home.includes("showEmpty"), "empty state (fetch ok, zero roles) must exist");
+  assert.ok(home.includes("showSlow"), "slow state (budget spent, fetch alive) must exist");
+  assert.ok(home.includes("showError"), "error state must exist");
+  // No silent fall-through: the TS guard comment must not claim unreachable.
+  assert.equal(home.includes("Unreachable"), false, "the null-job path must not be called unreachable");
+  // The three meta strings are distinct events with distinct labels.
+  for (const meta of ["jobs · empty", "jobs · slow 8s", "jobs · transport"]) {
+    assert.ok(home.includes(meta), `distinct meta "${meta}" must be present`);
+  }
+});
+
 test("HomeModule carries exactly three weights and no borderTop accent pattern", () => {
   assert.ok(homeModule.includes('"hero" | "standard" | "quiet"'));
   assert.equal(homeModule.includes("borderTopWidth"), false, "borderTop-as-weight pattern is retired");

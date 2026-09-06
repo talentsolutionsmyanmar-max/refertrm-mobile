@@ -105,8 +105,9 @@ export const copy = {
       label: "A real role, right now",
       nofee: "Free for you — the employer pays the fee.",
       salaryHidden: "Salary not listed",
-      empty: "The jobs list didn't load this time. Your saved roles are in Jobs.",
+      empty: "The jobs list came back empty.",
       error: "We couldn't reach the jobs list.",
+      slow: "Still loading — it's taking longer than usual. Browse all jobs below while it finishes.",
       retry: "Try again",
     },
     primary: {

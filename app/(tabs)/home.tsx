@@ -8,6 +8,7 @@ import { Skeleton } from "../../src/components/ui";
 import { loadAcademy, loadHeroJob, loadJobs } from "../../src/api/load";
 import { errorMessage } from "../../src/copy/error";
 import { isTimeoutError, isTransportError } from "../../src/api/signal";
+import { HERO_TIMEOUT_MS } from "../../src/api/endpoints";
 import {
   GAME_URL,
   MAYA_URL,
@@ -24,9 +25,13 @@ const CV_URL = "https://www.refertrm.com/eq/cv-builder";
 /** G2 — the hero's visible loading state never outlives the ten-second budget. */
 const HERO_VISIBLE_LOADING_MS = 8_000;
 
-/** G2d — the failure explains itself: error class in the mono meta line. */
+/** G2d/H3 — the failure explains itself with the true error class, never conflated. */
 function heroErrorMeta(error: unknown): string {
-  if (isTimeoutError(error)) return "jobs · timeout 8s";
+  // Distinct events, distinct strings: the fetch timing out (the request died at
+  // the hero's own HERO_TIMEOUT_MS) vs the visible-skeleton budget expiring while
+  // the fetch is still alive (handled by the slow branch, "jobs · slow 8s") vs a
+  // transport failure vs a server error vs a successful empty fetch.
+  if (isTimeoutError(error)) return `jobs · timeout ${Math.round(HERO_TIMEOUT_MS / 1000)}s fetch`;
   if (isTransportError(error)) return "jobs · transport";
   return "jobs · server";
 }
@@ -48,7 +53,10 @@ function HeroJobSlot() {
   }, [query.isLoading, job]);
 
   const showLoading = query.isLoading && !job && !loadingBudgetSpent;
-  const showError = !job && (query.isError || loadingBudgetSpent);
+  // H1 — three distinct states, not two. Zero-role success is its own state.
+  const showError = !job && query.isError; // fetch failed
+  const showSlow = !job && !query.isError && loadingBudgetSpent; // budget spent, fetch still alive
+  const showEmpty = !job && !query.isError && !query.isLoading && query.isFetched; // fetch ok, zero roles
 
   if (showLoading) {
     return (
@@ -65,7 +73,7 @@ function HeroJobSlot() {
   }
 
   if (showError) {
-    // O2 — zero/failure is transport or empty, never "the market has no jobs".
+    // O2 — failure is transport, never "the market has no jobs".
     return (
       <View
         style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
@@ -79,7 +87,7 @@ function HeroJobSlot() {
           {errorMessage(query.error)}
         </Text>
         <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>
-          {query.isError ? heroErrorMeta(query.error) : "jobs · timeout 8s"}
+          {heroErrorMeta(query.error)}
         </Text>
         <Pressable
           accessibilityRole="button"
@@ -104,8 +112,60 @@ function HeroJobSlot() {
     );
   }
 
+  if (showSlow) {
+    // H2 — still loading past the budget: say so honestly, point at the working gold button.
+    return (
+      <View
+        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        accessibilityLiveRegion="polite"
+      >
+        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
+          {copy.home.heroJob.slow}
+        </Text>
+        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>jobs · slow 8s</Text>
+      </View>
+    );
+  }
+
+  if (showEmpty) {
+    // H1 — fetch succeeded, zero roles, no cache: honest empty, not a vanished slot.
+    return (
+      <View
+        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        accessibilityLiveRegion="polite"
+      >
+        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
+          {copy.home.heroJob.empty}
+        </Text>
+        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>jobs · empty</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={copy.home.heroJob.retry}
+          onPress={() => {
+            setLoadingBudgetSpent(false);
+            void query.refetch();
+          }}
+          style={({ pressed }) => ({
+            minHeight: tap,
+            marginTop: 12,
+            borderRadius: 10,
+            backgroundColor: color.navy,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: pressed ? 0.82 : 1,
+          })}
+        >
+          <Text style={{ color: color.white, ...type.body, fontWeight: "700" }}>{copy.home.heroJob.retry}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   if (!job) {
-    // Unreachable: showLoading/showError cover the null paths. Guard for TS.
+    // TS guard: the four states above cover every null-job path. If this ever
+    // renders, a new null path was added without a state — that is the bug.
     return null;
   }
 
