@@ -244,14 +244,14 @@ function HeroJobSlot() {
                 borderColor: t.accents.gold,
               }}
             >
-              <Text style={{ color: t.accents.gold, ...type.monoLabel, fontWeight: "700" }}>{headcount}</Text>
+              <Text style={{ color: t.derived.accentTextGold, ...type.monoLabel, fontWeight: "700" }}>{headcount}</Text>
             </View>
           ) : null}
           <Text style={{ color: t.colors.mut, ...type.body, marginTop: 10 }}>
             {job.location || copy.jobs.locationUnknown}
           </Text>
           {/* T3 — SALARY in gold, its own line, the largest number on the screen. */}
-          <Text style={{ color: t.accents.gold, ...type.standard, fontWeight: "800", marginTop: 6 }}>
+          <Text style={{ color: t.derived.accentTextGold, ...type.standard, fontWeight: "800", marginTop: 6 }}>
             {job.salaryDisplay || copy.home.heroJob.salaryHidden}
           </Text>
         </View>
@@ -315,7 +315,7 @@ function SlotOneHeader() {
             }}
             style={({ pressed }) => ({ minHeight: tap, justifyContent: "center", paddingHorizontal: 12, opacity: pressed ? 0.75 : 1 })}
           >
-            <Text style={{ color: t.accents.teal, ...type.body, fontWeight: "700" }}>Save</Text>
+            <Text style={{ color: t.derived.accentTextTeal, ...type.body, fontWeight: "700" }}>Save</Text>
           </Pressable>
         </View>
       ) : (
@@ -343,7 +343,7 @@ function SlotOneHeader() {
         </Pressable>
       )}
       {/* T3d — the offer stated with conviction (replaces the orphaned no-fee caption). */}
-      <Text style={{ color: t.accents.teal, ...type.monoLabel, fontWeight: "700", marginTop: space[2] }}>
+      <Text style={{ color: t.derived.accentTextTeal, ...type.monoLabel, fontWeight: "700", marginTop: space[2] }}>
         {copy.home.conviction}
       </Text>
       {/* T3e — real prod numbers, read at runtime, never baked. */}

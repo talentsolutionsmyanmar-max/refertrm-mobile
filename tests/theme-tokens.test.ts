@@ -35,9 +35,6 @@ const LEGACY_HEX_EXEMPT = new Set([
   "app/start.tsx",
   "app/learn/[slug].tsx",
   "app/jobs/[id].tsx",
-  "app/(tabs)/jobs.tsx",
-  "app/(tabs)/learn.tsx",
-  "src/components/ui.tsx",
 ]);
 
 function sourceFiles(): string[] {
@@ -96,14 +93,13 @@ test("T5 — the legacy-hex exemption list is explicit and must shrink, never si
   // Any file removed from LEGACY_HEX_EXEMPT has been restyled onto tokens.
   // The list may only shrink. Asserting its exact members makes a new
   // off-palette surface a deliberate, reviewed addition.
+  // NIGHT-TOKENS-008 scope extension shrank it to the two detail leaves +
+  // app/start.tsx — hex-exempt only, NEVER contrast-exempt (see contrast.test.ts).
   const actual = [...LEGACY_HEX_EXEMPT].sort();
   assert.deepEqual(actual, [
-    "app/(tabs)/jobs.tsx",
-    "app/(tabs)/learn.tsx",
     "app/jobs/[id].tsx",
     "app/learn/[slug].tsx",
     "app/start.tsx",
-    "src/components/ui.tsx",
   ].sort());
 });
 

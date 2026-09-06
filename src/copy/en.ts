@@ -108,7 +108,7 @@ export const copy = {
       night: "Still up.",
     },
     namePrompt: "Add your name",
-    conviction: "THE ROLES ARE REAL. THE FEE ISN'T YOURS.",
+    conviction: "APPLYING IS FREE. THE EMPLOYER PAYS.",
     substance: (roles: number) => `${roles} open roles from real client companies, right now.`,
     substanceFallback: "Open roles from real client companies, right now.",
     heroJob: {

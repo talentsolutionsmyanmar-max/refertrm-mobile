@@ -1,8 +1,16 @@
 import { Pressable, Text, View } from "react-native";
 import { copy } from "../copy/en";
-import { color, tap, type } from "../theme";
+import { tap, type } from "../theme";
+import { useTheme } from "../theme/ThemeProvider";
 
-/** Cream content card — the ReferTRM learner surface (matches web #fffdf8). */
+/**
+ * Shared component layer — themed via useTheme() (H1).
+ * The legacy `color` shim is retired here: no single key can serve both ink
+ * (text) and surface (fill) roles across a dark palette. Text resolves to
+ * ink/mut; surfaces resolve to panel/panel2. Derived alphas come from the
+ * theme (H2) — ink at low alpha on the active backdrop, never dark-ink-on-dark.
+ */
+
 export function Card({
   label,
   accent,
@@ -12,14 +20,15 @@ export function Card({
   accent?: "gold" | "teal";
   children: React.ReactNode;
 }) {
-  const accentColor = accent === "gold" ? color.goldText : accent === "teal" ? color.tealDark : color.muted;
+  const t = useTheme();
+  const accentColor = accent === "gold" ? t.derived.accentTextGold : accent === "teal" ? t.derived.accentTextTeal : t.colors.mut;
   return (
     <View
       style={{
         borderWidth: 1,
-        borderColor: accent === "gold" ? color.goldSoftBorder : color.line,
+        borderColor: accent === "gold" ? t.accents.gold : t.colors.line,
         borderRadius: 10,
-        backgroundColor: color.cream,
+        backgroundColor: t.colors.panel,
         overflow: "hidden",
       }}
     >
@@ -28,9 +37,9 @@ export function Card({
           style={{
             paddingHorizontal: 16,
             paddingVertical: 10,
-            backgroundColor: accent === "gold" ? color.goldSoftBg : "rgba(0,31,63,0.03)",
+            backgroundColor: accent === "gold" ? t.derived.goldSoftBg : t.derived.labelStripBg,
             borderBottomWidth: 1,
-            borderBottomColor: accent === "gold" ? color.goldSoftBorder : color.line,
+            borderBottomColor: accent === "gold" ? t.accents.gold : t.colors.line,
           }}
         >
           <Text
@@ -51,13 +60,14 @@ export function Card({
 }
 
 export function CardText({ text, mm }: { text: string; mm?: boolean }) {
+  const t = useTheme();
   return (
     <Text
       style={{
-        color: color.navy,
+        color: t.colors.ink,
         fontSize: 16,
         lineHeight: mm ? 32 : 26,
-        fontFamily: mm ? "Padauk" : undefined,
+        fontFamily: mm ? "Padauk" : "Nunito",
       }}
     >
       {text}
@@ -67,17 +77,18 @@ export function CardText({ text, mm }: { text: string; mm?: boolean }) {
 
 /** Intentional compact empty state — never a giant blank page. */
 export function EmptyNote({ text }: { text: string }) {
+  const t = useTheme();
   return (
     <View
       style={{
         borderWidth: 1,
-        borderColor: color.line,
+        borderColor: t.colors.line,
         borderRadius: 10,
-        backgroundColor: color.paper,
+        backgroundColor: t.colors.bg1,
         padding: 16,
       }}
     >
-      <Text style={{ color: color.muted, fontSize: 15, lineHeight: 22 }}>{text}</Text>
+      <Text style={{ color: t.colors.mut, ...type.body }}>{text}</Text>
     </View>
   );
 }
@@ -91,6 +102,7 @@ export function Chip({
   label: string;
   onPress: () => void;
 }) {
+  const t = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -103,18 +115,19 @@ export function Chip({
         paddingHorizontal: 16,
         borderRadius: 999,
         justifyContent: "center",
-        backgroundColor: active ? color.navy : color.white,
+        backgroundColor: active ? t.colors.ink : t.colors.panel,
         borderWidth: 1,
-        borderColor: color.line,
+        borderColor: t.colors.line,
         opacity: pressed ? 0.8 : 1,
       })}
     >
-      <Text style={{ color: active ? color.white : color.navy, fontWeight: "600" }}>{label}</Text>
+      <Text style={{ color: active ? t.colors.bg0 : t.colors.ink, fontWeight: "600" }}>{label}</Text>
     </Pressable>
   );
 }
 
 export function Banner({ text }: { text: string }) {
+  const t = useTheme();
   return (
     <View
       style={{
@@ -122,44 +135,48 @@ export function Banner({ text }: { text: string }) {
         marginTop: 8,
         padding: 12,
         borderRadius: 8,
-        backgroundColor: "rgba(212,175,55,0.16)",
+        backgroundColor: t.derived.goldSoftBg,
       }}
     >
-      <Text style={{ color: color.navy, fontSize: 13 }}>{text}</Text>
+      {/* The banner is a gold fill (light in both themes) — text is dark ink. */}
+      <Text style={{ color: t.derived.bannerText, ...type.bodySm }}>{text}</Text>
     </View>
   );
 }
 
 /**
  * CONSUMER-UIUX-1 V7 — skeletons, not spinners. Static skeleton bars shaped
- * like the content being loaded. No spinner component, no shimmer.
+ * like the content being loaded. Skeleton bars derive from the active theme
+ * (ink at low alpha), so they stay visible on a dark panel (H2).
  */
 export function Skeleton({ width, height = 14 }: { width: number | `${number}%`; height?: number }) {
+  const t = useTheme();
   return (
     <View
       accessibilityElementsHidden
       importantForAccessibility="no"
-      style={{ width, height, borderRadius: 6, backgroundColor: "rgba(0,31,63,0.08)" }}
+      style={{ width, height, borderRadius: 6, backgroundColor: t.derived.skeletonBg }}
     />
   );
 }
 
 export function Loading() {
+  const t = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: color.bg, padding: 16, gap: 12 }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.bg0, padding: 16, gap: 12 }}>
       <Skeleton width="40%" height={12} />
       <Skeleton width="75%" height={22} />
-      <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16, gap: 10 }}>
+      <View style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.panel, padding: 16, gap: 10 }}>
         <Skeleton width="45%" />
         <Skeleton width="90%" height={18} />
         <Skeleton width="70%" height={18} />
       </View>
-      <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16, gap: 10 }}>
+      <View style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.panel, padding: 16, gap: 10 }}>
         <Skeleton width="45%" />
         <Skeleton width="85%" height={18} />
         <Skeleton width="60%" height={18} />
       </View>
-      <Text style={{ color: color.muted, marginTop: 4 }}>{copy.errors.loading}</Text>
+      <Text style={{ color: t.colors.mut, marginTop: 4, fontFamily: "Nunito" }}>{copy.errors.loading}</Text>
     </View>
   );
 }
@@ -171,9 +188,10 @@ export function RetryState({
   message: string;
   onRetry: () => void;
 }) {
+  const t = useTheme();
   return (
     <View style={{ padding: 16, alignItems: "flex-start" }}>
-      <Text style={{ color: color.muted }}>{message}</Text>
+      <Text style={{ color: t.colors.mut, fontFamily: "Nunito" }}>{message}</Text>
       <Pressable
         onPress={onRetry}
         accessibilityRole="button"
@@ -183,10 +201,10 @@ export function RetryState({
           paddingHorizontal: 16,
           borderRadius: 8,
           justifyContent: "center",
-          backgroundColor: color.navy,
+          backgroundColor: t.colors.ink,
         }}
       >
-        <Text style={{ color: color.white, fontWeight: "600" }}>{copy.errors.retry}</Text>
+        <Text style={{ color: t.colors.bg0, fontWeight: "600", fontFamily: "Nunito" }}>{copy.errors.retry}</Text>
       </Pressable>
     </View>
   );
