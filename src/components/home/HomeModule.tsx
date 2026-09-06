@@ -64,7 +64,7 @@ export function HomeModule({
   accent?: "navy" | "gold" | "teal";
   children?: React.ReactNode;
 }) {
-  const titleStyle = weight === "hero" ? type.hero : weight === "quiet" ? type.bodySm : type.standard;
+  const titleStyle = weight === "hero" ? type.display : weight === "quiet" ? type.bodySm : type.standard;
   const detailStyle = weight === "quiet" ? type.bodySm : type.body;
   return (
     <View

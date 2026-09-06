@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Link } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,6 +9,7 @@ import { loadAcademy, loadHeroJob, loadJobs } from "../../src/api/load";
 import { errorMessage } from "../../src/copy/error";
 import { isTimeoutError, isTransportError } from "../../src/api/signal";
 import { HERO_TIMEOUT_MS } from "../../src/api/endpoints";
+import { getDeviceSettings, setDeviceSetting } from "../../src/storage/settings";
 import {
   GAME_URL,
   MAYA_URL,
@@ -18,7 +19,8 @@ import {
   openWeb,
 } from "../../src/linking/start";
 import { copy } from "../../src/copy/en";
-import { color, tap, type, space } from "../../src/theme";
+import { radii, tap, type, space } from "../../src/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 
 const CV_URL = "https://www.refertrm.com/eq/cv-builder";
 
@@ -42,6 +44,7 @@ function heroErrorMeta(error: unknown): string {
 function HeroJobSlot() {
   // G2 — dedicated minimal fetch (limit=1), not the 214-role catalogue. Cache-first.
   const query = useQuery({ queryKey: ["hero-job"], queryFn: ({ signal }) => loadHeroJob(signal) });
+  const t = useTheme();
   const job = query.data?.job ?? null;
 
   // S4 — extract the headcount from the polluted API title. Verified against the
@@ -50,7 +53,7 @@ function HeroJobSlot() {
   // else falls through to the raw title with no badge.
   const titleMatch = job ? /^(.*?)\s*—\s*Hiring\s+(\d+)\s+positions?\s*$/i.exec(job.title) : null;
   const heroTitle = titleMatch ? titleMatch[1].trim() : job?.title;
-  const headcount = titleMatch ? `${titleMatch[2]} positions`.toUpperCase() : null;
+  const headcount = titleMatch ? copy.home.heroJob.headcount(Number(titleMatch[2])).toUpperCase() : null;
 
   // G2a — cap the visible skeleton at 5s (HERO_VISIBLE_LOADING_MS); the fetch
   // runs to 8s (HERO_TIMEOUT_MS), so the role can still land during SLOW.
@@ -77,7 +80,7 @@ function HeroJobSlot() {
   if (showLoading) {
     return (
       <View
-        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16, gap: 10 }}
+        style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.panel, padding: 16, gap: 10 }}
         accessibilityLiveRegion="polite"
       >
         <Skeleton width="45%" />
@@ -92,17 +95,17 @@ function HeroJobSlot() {
     // O2 — failure is transport, never "the market has no jobs".
     return (
       <View
-        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.panel, padding: 16 }}
         accessibilityLiveRegion="polite"
       >
-        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
-        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+        <Text style={{ color: t.colors.ink, ...type.standard, fontWeight: "700", marginTop: 6 }}>
           {copy.home.heroJob.error}
         </Text>
-        <Text style={{ color: color.muted, ...type.body, marginTop: 5 }}>
+        <Text style={{ color: t.colors.mut, ...type.body, marginTop: 5 }}>
           {errorMessage(query.error)}
         </Text>
-        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, marginTop: 6 }}>
           {heroErrorMeta(query.error)}
         </Text>
         <Pressable
@@ -116,13 +119,13 @@ function HeroJobSlot() {
             minHeight: tap,
             marginTop: 12,
             borderRadius: 10,
-            backgroundColor: color.navy,
+            backgroundColor: t.colors.ink,
             alignItems: "center",
             justifyContent: "center",
             opacity: pressed ? 0.82 : 1,
           })}
         >
-          <Text style={{ color: color.white, ...type.body, fontWeight: "700" }}>{copy.home.heroJob.retry}</Text>
+          <Text style={{ color: t.colors.ink, ...type.body, fontWeight: "700" }}>{copy.home.heroJob.retry}</Text>
         </Pressable>
       </View>
     );
@@ -132,14 +135,14 @@ function HeroJobSlot() {
     // H2 — still loading past the budget: say so honestly, point at the working gold button.
     return (
       <View
-        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.panel, padding: 16 }}
         accessibilityLiveRegion="polite"
       >
-        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
-        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+        <Text style={{ color: t.colors.ink, ...type.standard, fontWeight: "700", marginTop: 6 }}>
           {copy.home.heroJob.slow}
         </Text>
-        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, marginTop: 6 }}>
           {`jobs · slow ${Math.round(HERO_VISIBLE_LOADING_MS / 1000)}s`}
         </Text>
       </View>
@@ -150,14 +153,14 @@ function HeroJobSlot() {
     // J2 — paused query (offline): waiting for a connection, never "no jobs".
     return (
       <View
-        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.panel, padding: 16 }}
         accessibilityLiveRegion="polite"
       >
-        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
-        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+        <Text style={{ color: t.colors.ink, ...type.standard, fontWeight: "700", marginTop: 6 }}>
           {copy.home.heroJob.offline}
         </Text>
-        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>jobs · offline</Text>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, marginTop: 6 }}>jobs · offline</Text>
       </View>
     );
   }
@@ -166,14 +169,14 @@ function HeroJobSlot() {
     // H1 — fetch succeeded, zero roles, no cache: honest empty, not a vanished slot.
     return (
       <View
-        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.panel, padding: 16 }}
         accessibilityLiveRegion="polite"
       >
-        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
-        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+        <Text style={{ color: t.colors.ink, ...type.standard, fontWeight: "700", marginTop: 6 }}>
           {copy.home.heroJob.empty}
         </Text>
-        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>jobs · empty</Text>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, marginTop: 6 }}>jobs · empty</Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={copy.home.heroJob.retry}
@@ -185,13 +188,13 @@ function HeroJobSlot() {
             minHeight: tap,
             marginTop: 12,
             borderRadius: 10,
-            backgroundColor: color.navy,
+            backgroundColor: t.colors.ink,
             alignItems: "center",
             justifyContent: "center",
             opacity: pressed ? 0.82 : 1,
           })}
         >
-          <Text style={{ color: color.white, ...type.body, fontWeight: "700" }}>{copy.home.heroJob.retry}</Text>
+          <Text style={{ color: t.colors.ink, ...type.body, fontWeight: "700" }}>{copy.home.heroJob.retry}</Text>
         </Pressable>
       </View>
     );
@@ -204,14 +207,14 @@ function HeroJobSlot() {
     // state shipped, and it does not ship again.)
     return (
       <View
-        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.panel, padding: 16 }}
         accessibilityLiveRegion="polite"
       >
-        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
-        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+        <Text style={{ color: t.colors.ink, ...type.standard, fontWeight: "700", marginTop: 6 }}>
           {copy.home.heroJob.empty}
         </Text>
-        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>jobs · empty</Text>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, marginTop: 6 }}>jobs · empty</Text>
       </View>
     );
   }
@@ -223,32 +226,32 @@ function HeroJobSlot() {
         accessibilityLabel={`${heroTitle}, ${job.location || copy.jobs.locationUnknown}. ${copy.home.primary.label}.`}
         style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}
       >
-        {/* S2 — the hero is the most valuable rectangle on the screen: navy, no hairline. */}
-        <View style={{ borderRadius: 12, backgroundColor: color.navy, padding: 16 }}>
-          <Text style={{ color: "rgba(255,255,255,0.6)", ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
-          {/* S1 — the role title carries the display ceiling. */}
-          <Text style={{ color: color.white, ...type.display, fontWeight: "800", marginTop: 8 }}>{heroTitle}</Text>
+        {/* T3 — panel surface, radius lg, shadow from the active theme, NO border. */}
+        <View style={{ borderRadius: radii.lg, backgroundColor: t.colors.panel, padding: 16, shadowColor: "#000" /* lint-ok — shadow base, matches the tokens' rgba(0,0,0) shadow */, shadowOpacity: t.name === "night" ? 0.45 : 0.16, shadowRadius: t.name === "night" ? 40 : 32, shadowOffset: { width: 0, height: t.name === "night" ? 14 : 12 }, elevation: 6 }}>
+          <Text style={{ color: t.colors.dim, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+          {/* T3 — role title ink at display 26. */}
+          <Text style={{ color: t.colors.ink, ...type.display, fontWeight: "800", marginTop: 8 }}>{heroTitle}</Text>
           {headcount ? (
-            /* S4 — the headcount is a selling point, extracted from the polluted API title. */
+            /* T4 — the headcount is a selling point, extracted from the polluted API title. */
             <View
               style={{
                 alignSelf: "flex-start",
                 marginTop: 10,
                 paddingHorizontal: 10,
                 paddingVertical: 4,
-                borderRadius: 6,
+                borderRadius: radii.pill,
                 borderWidth: 1,
-                borderColor: color.gold,
+                borderColor: t.accents.gold,
               }}
             >
-              <Text style={{ color: color.gold, ...type.monoLabel, fontWeight: "700" }}>{headcount}</Text>
+              <Text style={{ color: t.accents.gold, ...type.monoLabel, fontWeight: "700" }}>{headcount}</Text>
             </View>
           ) : null}
-          <Text style={{ color: "rgba(255,255,255,0.75)", ...type.body, marginTop: 10 }}>
+          <Text style={{ color: t.colors.mut, ...type.body, marginTop: 10 }}>
             {job.location || copy.jobs.locationUnknown}
           </Text>
-          {/* S3 — the salary is the motivating factor; it reads as one. */}
-          <Text style={{ color: color.gold, ...type.monoLabel, fontWeight: "700", marginTop: 4 }}>
+          {/* T3 — SALARY in gold, its own line, the largest number on the screen. */}
+          <Text style={{ color: t.accents.gold, ...type.standard, fontWeight: "800", marginTop: 6 }}>
             {job.salaryDisplay || copy.home.heroJob.salaryHidden}
           </Text>
         </View>
@@ -257,23 +260,101 @@ function HeroJobSlot() {
   );
 }
 
-/** S5 — one line above the hero: time-of-day address + live count. No name, no auth. */
-function PulseLine() {
-  const query = useQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
-  const roles = query.data?.jobs.length;
-  const text =
-    typeof roles === "number" && roles > 0 ? copy.home.heroJob.pulse(roles) : copy.home.heroJob.pulseFallback;
+/**
+ * T3 — the slot-1 region adopts the Academy's vocabulary. Above the hero card:
+ * eyebrow (dim mono) · time-aware greeting (display 26) · "Add your name"
+ * (dotted-underline affordance, stored LOCALLY, never sent, never required) ·
+ * conviction line (teal mono caps) · substance line (runtime numbers, never baked).
+ */
+function SlotOneHeader() {
+  const t = useTheme();
+  const [name, setName] = useState(() => getDeviceSettings().guestName);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const h = new Date().getHours();
+  const greeting =
+    h < 12 ? copy.home.greeting.morning : h < 17 ? copy.home.greeting.afternoon : h < 21 ? copy.home.greeting.evening : copy.home.greeting.night;
+  const jobsQuery = useQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
+  const roles = jobsQuery.data?.jobs.length;
+  const substance =
+    typeof roles === "number" && roles > 0 ? copy.home.substance(roles) : copy.home.substanceFallback;
+
   return (
-    <Text
-      accessibilityLiveRegion="polite"
-      style={{ color: color.muted, ...type.bodySm, fontWeight: "600", paddingHorizontal: 2 }}
-    >
-      {text}
-    </Text>
+    <View style={{ gap: space[2], paddingHorizontal: 2 }}>
+      <Text style={{ color: t.colors.dim, ...type.monoLabel, fontWeight: "700" }}>REFERTRM</Text>
+      <Text style={{ color: t.colors.ink, ...type.display, fontWeight: "800" }}>{greeting}</Text>
+      {editing ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: tap }}>
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            placeholder={copy.home.namePrompt}
+            placeholderTextColor={t.colors.dim}
+            autoFocus
+            autoCapitalize="words"
+            autoCorrect={false}
+            accessibilityLabel={copy.home.namePrompt}
+            style={{
+              flex: 1,
+              minHeight: tap,
+              color: t.colors.ink,
+              ...type.body,
+              borderBottomWidth: 1,
+              borderBottomColor: t.colors.mut,
+              paddingVertical: 4,
+            }}
+          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Save name"
+            onPress={() => {
+              const trimmed = draft.trim();
+              setDeviceSetting("guestName", trimmed);
+              setName(trimmed);
+              setEditing(false);
+            }}
+            style={({ pressed }) => ({ minHeight: tap, justifyContent: "center", paddingHorizontal: 12, opacity: pressed ? 0.75 : 1 })}
+          >
+            <Text style={{ color: t.accents.teal, ...type.body, fontWeight: "700" }}>Save</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={name ? `Your name is ${name}. Tap to edit.` : copy.home.namePrompt}
+          onPress={() => {
+            setDraft(name);
+            setEditing(true);
+          }}
+          style={({ pressed }) => ({ alignSelf: "flex-start", minHeight: tap, justifyContent: "center", opacity: pressed ? 0.75 : 1 })}
+        >
+          <Text
+            style={{
+              color: name ? t.colors.ink : t.colors.mut,
+              ...type.body,
+              fontWeight: "600",
+              borderBottomWidth: 1,
+              borderBottomColor: t.colors.mut,
+              borderStyle: "dotted",
+            }}
+          >
+            {name || copy.home.namePrompt}
+          </Text>
+        </Pressable>
+      )}
+      {/* T3d — the offer stated with conviction (replaces the orphaned no-fee caption). */}
+      <Text style={{ color: t.accents.teal, ...type.monoLabel, fontWeight: "700", marginTop: space[2] }}>
+        {copy.home.conviction}
+      </Text>
+      {/* T3e — real prod numbers, read at runtime, never baked. */}
+      <Text style={{ color: t.colors.mut, ...type.body }}>{substance}</Text>
+    </View>
   );
 }
 
-function BrowserDoorRow({ label, url }: { label: string; url: string }) {  return (
+function BrowserDoorRow({ label, url }: { label: string; url: string }) {
+  const t = useTheme();
+  return (
     <Pressable
       accessibilityRole="link"
       accessibilityLabel={`${label}. ${copy.home.browserDoors.opensInBrowser}.`}
@@ -285,17 +366,18 @@ function BrowserDoorRow({ label, url }: { label: string; url: string }) {  retur
         justifyContent: "space-between",
         paddingVertical: 10,
         borderTopWidth: 1,
-        borderTopColor: color.line,
+        borderTopColor: t.colors.line,
         opacity: pressed ? 0.75 : 1,
       })}
     >
-      <Text style={{ color: color.navy, ...type.bodySm, fontWeight: "600" }}>{label}</Text>
-      <Text style={{ color: color.muted, ...type.monoLabel }}>{copy.home.browserDoors.opensInBrowser} ›</Text>
+      <Text style={{ color: t.colors.ink, ...type.bodySm, fontWeight: "600" }}>{label}</Text>
+      <Text style={{ color: t.colors.mut, ...type.monoLabel }}>{copy.home.browserDoors.opensInBrowser} ›</Text>
     </Pressable>
   );
 }
 
 export default function HomeScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
@@ -306,7 +388,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: color.paper }}
+      style={{ flex: 1, backgroundColor: t.colors.bg0 }}
       contentContainerStyle={{
         paddingHorizontal: space[4],
         paddingTop: Math.max(insets.top, space[4]),
@@ -314,9 +396,8 @@ export default function HomeScreen() {
         gap: space[4],
       }}
     >
-      {/* S5 — the screen gets a pulse: time-of-day address + live count.
-          Guest surface, no name, no auth. Sits above the hero. */}
-      <PulseLine />
+      {/* T3 — slot-1 region: the Academy's vocabulary, above the hero. */}
+      <SlotOneHeader />
 
       {/* 1 — MOB.HOME.HERO_JOB (hero): one real role, in-app */}
       <HeroJobSlot />
@@ -338,14 +419,14 @@ export default function HomeScreen() {
               style={{
                 minHeight: tap,
                 borderRadius: 12,
-                backgroundColor: color.gold,
+                backgroundColor: t.accents.gold,
                 alignItems: "center",
                 justifyContent: "center",
                 paddingHorizontal: 16,
                 paddingVertical: 10,
               }}
             >
-              <Text style={{ color: color.navy, ...type.standard, fontWeight: "800" }}>{copy.home.primary.label}</Text>
+              <Text style={{ color: t.colors.ink, ...type.standard, fontWeight: "800" }}>{copy.home.primary.label}</Text>
               {/* S7 — the no-fee line is part of the button, not a floating caption. */}
               <Text style={{ color: "rgba(0,31,63,0.7)", ...type.monoLabel, fontWeight: "700", marginTop: 3 }}>
                 {copy.home.heroJob.nofee}
@@ -394,9 +475,9 @@ export default function HomeScreen() {
 
       {/* 5 — MOB.HOME.BROWSER_DOORS (quiet, grouped): openWeb only, each row labelled */}
       <View
-        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.panel, padding: 16 }}
       >
-        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.browserDoors.header}</Text>
+        <Text style={{ color: t.colors.mut, ...type.monoLabel, fontWeight: "700" }}>{copy.home.browserDoors.header}</Text>
         <View style={{ marginTop: 6 }}>
           <BrowserDoorRow label={copy.home.browserDoors.rows.careerGame} url={GAME_URL} />
           <BrowserDoorRow label={copy.home.browserDoors.rows.askMaya} url={MAYA_URL} />
@@ -408,9 +489,9 @@ export default function HomeScreen() {
 
       {/* 6 — MOB.HOME.PROVENANCE (quiet) */}
       <View
-        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.paper, padding: 16 }}
+        style={{ borderWidth: 1, borderColor: t.colors.line, borderRadius: 12, backgroundColor: t.colors.bg0, padding: 16 }}
       >
-        <Text style={{ color: color.muted, ...type.bodySm }}>{copy.home.provenance.line}</Text>
+        <Text style={{ color: t.colors.mut, ...type.bodySm }}>{copy.home.provenance.line}</Text>
       </View>
     </ScrollView>
   );

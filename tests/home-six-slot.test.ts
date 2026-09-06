@@ -37,16 +37,16 @@ test("Home deletes the five retired modules", () => {
 });
 
 test("exactly one gold FILL in viewport one (R1) — gold text and gold borders are not fills", () => {
-  // R1 counts fills (backgroundColor), not accents. The headcount badge is a
-  // gold border and the salary is gold text — neither is a fill, and neither
-  // violates one-primary. The gate asserts exactly one gold backgroundColor on
-  // Home, and that gold accents exist only as text/border (never a second fill).
-  const goldFills = home.match(/backgroundColor:\s*color\.gold/g) ?? [];
+  // R1 counts fills (backgroundColor), not accents. Under NIGHT-TOKENS-007 the
+  // gold token is accents.gold (reads t.accents.gold or color.gold through the
+  // theme). The headcount pill is a gold border and the salary is gold text —
+  // neither is a fill. Assert exactly one gold backgroundColor on Home (the
+  // PRIMARY button), read through the theme indirection.
+  const goldFills = home.match(/backgroundColor:\s*(t\.accents\.gold|color\.gold)/g) ?? [];
   assert.equal(goldFills.length, 1, "only MOB.HOME.PRIMARY fills gold");
   const goldRef = home.match(/tone="gold"/g) ?? [];
   assert.equal(goldRef.length, 0, "no HomeAction gold tone on Home");
-  // If gold accents are present, they must be text (color:) or border
-  // (borderColor:), never a second fill — asserted by the fill count above.
+  // Gold accents present must be text (color:) or border (borderColor:) only.
 });
 
 test("no locked-value teaser strings anywhere in app/", () => {
@@ -210,6 +210,16 @@ test("J2 — HeroJobSlot has no silent null path (offline + unclassified both re
 test("FIX-003 gate — home.tsx consumes all five hero copy keys (empty · error · slow · offline · retry)", () => {
   for (const key of ["heroJob.empty", "heroJob.error", "heroJob.slow", "heroJob.offline", "heroJob.retry"]) {
     assert.ok(home.includes(`copy.home.${key}`), `home.tsx must consume copy.home.${key}`);
+  }
+});
+
+test("NIGHT-TOKENS-007 — the new slot-1 copy keys are consumed (greeting · namePrompt · conviction · substance · headcount)", () => {
+  for (const key of ["greeting.morning", "greeting.afternoon", "greeting.evening", "greeting.night", "namePrompt", "conviction", "substance", "heroJob.headcount"]) {
+    assert.ok(home.includes(`copy.home.${key}`), `home.tsx must consume copy.home.${key}`);
+  }
+  // And my.ts carries an empty-valued key for each (CCO fills; no agent authors MM).
+  for (const key of ["MOB.HOME.GREETING.morning", "MOB.HOME.GREETING.afternoon", "MOB.HOME.GREETING.evening", "MOB.HOME.GREETING.night", "MOB.HOME.NAME_PROMPT", "MOB.HOME.CONVICTION", "MOB.HOME.SUBSTANCE", "MOB.HOME.HERO_JOB.headcount", "MOB.ME.THEME.night", "MOB.ME.THEME.day"]) {
+    assert.ok(my.includes(`"${key}": ""`), `my.ts must carry "${key}" with an empty value`);
   }
 });
 

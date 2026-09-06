@@ -59,7 +59,8 @@ test("G3 — no box-affecting styles on a Pressable that is a direct child of Li
 test("G1 — MOB.HOME.PRIMARY paints gold on the inner View, not the asChild Pressable", () => {
   const home = readFileSync(join(root, "app/(tabs)/home.tsx"), "utf8");
   // The gold box must be on an inner View inside the asChild Pressable.
+  // Gold token reads t.accents.gold or color.gold through the theme.
   const primaryBlock = home.slice(home.indexOf("MOB.HOME.PRIMARY"));
-  const goldOnView = /<View[^>]*style=\{\{[\s\S]*?backgroundColor:\s*color\.gold/.test(primaryBlock);
+  const goldOnView = /<View[^>]*style=\{\{[\s\S]*?backgroundColor:\s*(t\.accents\.gold|color\.gold)/.test(primaryBlock);
   assert.ok(goldOnView, "gold box must be on an inner View so it paints on device");
 });

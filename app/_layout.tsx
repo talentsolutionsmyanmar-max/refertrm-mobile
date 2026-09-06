@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import * as Linking from "expo-linking";
 import NetInfo from "@react-native-community/netinfo";
 import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
+import { ThemeProvider } from "../src/theme/ThemeProvider";
 import { parseDeepLink } from "../src/linking/paths";
 import { isHttpsStartUrl, openStartInBrowser } from "../src/linking/start";
 import { copy } from "../src/copy/en";
@@ -78,12 +79,13 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={client}>
-      <StatusBar style="light" />
-      <Stack
+      <ThemeProvider>
+        <StatusBar style="light" />
+        <Stack
         screenOptions={{
           headerShown: false,
-          headerStyle: { backgroundColor: "#001F3F" },
-          headerTintColor: "#FFFFFF",
+          headerStyle: { backgroundColor: "#070B18" },
+          headerTintColor: "#F2F5FF",
           headerTitleStyle: { fontWeight: "700" },
           headerBackVisible: true,
         }}
@@ -98,11 +100,12 @@ export default function RootLayout() {
           options={{
             headerShown: true,
             title: copy.start.title,
-            headerTintColor: "#FFFFFF",
-            headerStyle: { backgroundColor: "#001F3F" },
+            headerTintColor: "#F2F5FF",
+            headerStyle: { backgroundColor: "#070B18" },
           }}
         />
       </Stack>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

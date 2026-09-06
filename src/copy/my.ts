@@ -4,6 +4,16 @@
  * keys are reserved to match §5 exactly; no agent authors MM.
  */
 export const copyMy = {
+  "MOB.HOME.GREETING.morning": "",
+  "MOB.HOME.GREETING.afternoon": "",
+  "MOB.HOME.GREETING.evening": "",
+  "MOB.HOME.GREETING.night": "",
+  "MOB.HOME.NAME_PROMPT": "",
+  "MOB.HOME.CONVICTION": "",
+  "MOB.HOME.SUBSTANCE": "",
+  "MOB.HOME.HERO_JOB.headcount": "",
+  "MOB.ME.THEME.night": "",
+  "MOB.ME.THEME.day": "",
   "MOB.HOME.HERO_JOB.label": "",
   "MOB.HOME.HERO_JOB.nofee": "",
   "MOB.HOME.HERO_JOB.offline": "",

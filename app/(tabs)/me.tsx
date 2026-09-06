@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ModuleState } from "../../src/components/states/ModuleState";
 import { LOGIN_TRINITY, SETTINGS_URL, openWeb } from "../../src/linking/start";
 import { getDeviceSettings, setDeviceSetting, type DeviceSettings } from "../../src/storage/settings";
+import { useTheme } from "../../src/theme/ThemeProvider";
 import { color, tap } from "../../src/theme";
 
 function ToolRow({ title, detail, onPress }: { title: string; detail: string; onPress?: () => void }) {
@@ -40,6 +41,7 @@ function SettingRow({ label, value, onPress }: { label: string; value: string; o
 export default function MeScreen() {
   const insets = useSafeAreaInsets();
   const [settings, setSettings] = useState<DeviceSettings>(() => getDeviceSettings());
+  const { toggle } = useTheme();
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: color.paper }}
@@ -73,7 +75,11 @@ export default function MeScreen() {
         <SettingRow
           label="Theme"
           value={settings.theme}
-          onPress={() => setSettings(setDeviceSetting("theme", settings.theme === "Light" ? "System" : "Light"))}
+          onPress={() => {
+            // T2 — wire the existing row to the real theme. Night default, day toggle.
+            toggle();
+            setSettings(getDeviceSettings());
+          }}
         />
         <SettingRow
           label="Data saver"

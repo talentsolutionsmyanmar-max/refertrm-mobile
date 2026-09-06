@@ -101,6 +101,16 @@ export const copy = {
 
   /** CONSUMER-UIUX-1 §4 six-slot Home. Keys mirror §5 for CCO's MM pass. */
   home: {
+    greeting: {
+      morning: "Good morning.",
+      afternoon: "Good afternoon.",
+      evening: "Good evening.",
+      night: "Still up.",
+    },
+    namePrompt: "Add your name",
+    conviction: "THE ROLES ARE REAL. THE FEE ISN'T YOURS.",
+    substance: (roles: number) => `${roles} open roles from real client companies, right now.`,
+    substanceFallback: "Open roles from real client companies, right now.",
     heroJob: {
       label: "A real role, right now",
       nofee: "Free for you — the employer pays the fee.",
@@ -116,6 +126,7 @@ export const copy = {
         return `${part} · ${roles} roles open right now`;
       },
       pulseFallback: "Roles are open right now",
+      headcount: (n: number) => `${n} positions`,
     },
     primary: {
       label: "See all jobs",
