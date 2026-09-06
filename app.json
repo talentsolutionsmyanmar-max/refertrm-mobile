@@ -42,7 +42,20 @@
         }
       ]
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Nunito-400.ttf",
+            "./assets/fonts/Nunito-600.ttf",
+            "./assets/fonts/Nunito-700.ttf",
+            "./assets/fonts/Nunito-800.ttf"
+          ]
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },

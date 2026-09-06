@@ -2,10 +2,39 @@ import { useEffect, useState } from "react";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Linking from "expo-linking";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import NetInfo from "@react-native-community/netinfo";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
+import { ThemeProvider } from "../src/theme/ThemeProvider";
 import { parseDeepLink } from "../src/linking/paths";
 import { isHttpsStartUrl, openStartInBrowser } from "../src/linking/start";
 import { copy } from "../src/copy/en";
+
+/**
+ * T1/K1 — TanStack Query v5 does not auto-wire NetInfo in React Native; its
+ * default onlineManager listens for window online/offline events that do not
+ * exist here, so isOnline() would stay true forever and query fetchStatus would
+ * never reach "paused". Wire the real connectivity signal so the hero's offline
+ * state (and refetchOnReconnect) actually work on a phone with no connectivity.
+ *
+ * The listener is set inside RootLayout's useEffect, never at module scope: a
+ * module-scope side effect touching a native module at import time is the same
+ * risk shape as the two launch crashes this repo already ate. A throw is
+ * swallowed and logged — worst case, the app degrades to pre-T1 behaviour
+ * (isOnline() stays true, offline surfaces as jobs · transport), which is
+ * survivable. A one-tick race where a query mounts before the listener is wired
+ * is acceptable: the default is "online", i.e. current behaviour.
+ */
+function wireOnlineManager() {
+  try {
+    onlineManager.setEventListener((setOnline) =>
+      NetInfo.addEventListener((state) => {
+        setOnline(state.isConnected !== false && state.isInternetReachable !== false);
+      }),
+    );
+  } catch (error) {
+    console.warn("refertrm: online wiring unavailable; degrading to pre-T1 behaviour", error);
+  }
+}
 
 export default function RootLayout() {
   const router = useRouter();
@@ -22,6 +51,10 @@ export default function RootLayout() {
         },
       }),
   );
+
+  useEffect(() => {
+    wireOnlineManager();
+  }, []);
 
   useEffect(() => {
     function onUrl(url: string) {
@@ -46,12 +79,13 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={client}>
-      <StatusBar style="light" />
-      <Stack
+      <ThemeProvider>
+        <StatusBar style="light" />
+        <Stack
         screenOptions={{
           headerShown: false,
-          headerStyle: { backgroundColor: "#001F3F" },
-          headerTintColor: "#FFFFFF",
+          headerStyle: { backgroundColor: "#070B18" },
+          headerTintColor: "#F2F5FF",
           headerTitleStyle: { fontWeight: "700" },
           headerBackVisible: true,
         }}
@@ -66,11 +100,12 @@ export default function RootLayout() {
           options={{
             headerShown: true,
             title: copy.start.title,
-            headerTintColor: "#FFFFFF",
-            headerStyle: { backgroundColor: "#001F3F" },
+            headerTintColor: "#F2F5FF",
+            headerStyle: { backgroundColor: "#070B18" },
           }}
         />
       </Stack>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import { Image, type ImageSourcePropType } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { copy } from "../../src/copy/en";
-import { color } from "../../src/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 
 function TabMark({ icon, color: iconColor }: { icon: ImageSourcePropType; color: string }) {
   return <Image source={icon} style={{ width: 22, height: 22, tintColor: iconColor }} accessibilityElementsHidden />;
@@ -10,22 +10,25 @@ function TabMark({ icon, color: iconColor }: { icon: ImageSourcePropType; color:
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const t = useTheme();
   const tabBarPaddingBottom = Math.max(insets.bottom, 10);
 
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: color.navy },
-        headerTintColor: color.white,
+        headerStyle: { backgroundColor: t.colors.bg1 },
+        headerTintColor: t.colors.ink,
         headerTitleStyle: { fontWeight: "700" },
-        tabBarActiveTintColor: color.navy,
-        tabBarInactiveTintColor: color.muted,
+        tabBarActiveTintColor: t.colors.ink,
+        tabBarInactiveTintColor: t.colors.dim,
         tabBarLabelStyle: { fontSize: 12, fontWeight: "600", lineHeight: 16 },
         tabBarItemStyle: { paddingTop: 4, paddingBottom: 2 },
         tabBarStyle: {
           minHeight: 62 + tabBarPaddingBottom,
           paddingTop: 6,
           paddingBottom: tabBarPaddingBottom,
+          backgroundColor: t.colors.bg1,
+          borderTopColor: t.colors.line,
         },
       }}
       initialRouteName="home"

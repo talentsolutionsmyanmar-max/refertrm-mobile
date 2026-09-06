@@ -4,12 +4,14 @@ import { HomeModule } from "../../src/components/home/HomeModule";
 import { ModuleState } from "../../src/components/states/ModuleState";
 import { REFERRALS_URL, openWeb } from "../../src/linking/start";
 import { color } from "../../src/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function EarnScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: color.paper }}
+      style={{ flex: 1, backgroundColor: t.colors.bg0 }}
       contentContainerStyle={{ padding: 16, paddingBottom: 32 + insets.bottom, gap: 12 }}
     >
       <HomeModule

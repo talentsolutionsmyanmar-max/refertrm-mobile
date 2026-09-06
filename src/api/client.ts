@@ -1,6 +1,6 @@
 import { parseRouteSegment } from "../linking/ids";
 import { getAccessToken } from "../auth/session";
-import { endpoints, JOBS_LIST_QUERY } from "./endpoints";
+import { endpoints, HERO_JOB_QUERY, HERO_TIMEOUT_MS, JOBS_LIST_QUERY } from "./endpoints";
 import {
   AbortedError,
   createRequestSignal,
@@ -69,6 +69,14 @@ export async function getJson(
 
 export function fetchJobs(signal?: AbortSignal): Promise<unknown> {
   return getJson(`${endpoints.jobs}?${JOBS_LIST_QUERY}`, signal, LIST_TIMEOUT_MS, false);
+}
+
+/**
+ * G2 — Home hero needs one role, not the 214-role catalogue. Dedicated minimal
+ * fetch at the hero's 8s budget, cache-first handled by the caller.
+ */
+export function fetchHeroJob(signal?: AbortSignal): Promise<unknown> {
+  return getJson(`${endpoints.jobs}?${HERO_JOB_QUERY}`, signal, HERO_TIMEOUT_MS, false);
 }
 
 export function fetchJob(id: string, signal?: AbortSignal): Promise<unknown> {

@@ -99,6 +99,64 @@ export const copy = {
     detail: "Grade path and practice on ReferTRM.com. Opens in your browser.",
   },
 
+  /** CONSUMER-UIUX-1 §4 six-slot Home. Keys mirror §5 for CCO's MM pass. */
+  home: {
+    greeting: {
+      morning: "Good morning.",
+      afternoon: "Good afternoon.",
+      evening: "Good evening.",
+      night: "Still up.",
+    },
+    namePrompt: "Add your name",
+    conviction: "APPLYING IS FREE. THE EMPLOYER PAYS.",
+    substance: (roles: number) => `${roles} open roles from real client companies, right now.`,
+    substanceFallback: "Open roles from real client companies, right now.",
+    heroJob: {
+      label: "A real role, right now",
+      nofee: "Free for you — the employer pays the fee.",
+      salaryHidden: "Salary not listed",
+      empty: "The jobs list came back empty.",
+      error: "We couldn't reach the jobs list.",
+      slow: "Still loading — it's taking longer than usual. Browse all jobs below while it finishes.",
+      offline: "Waiting for a connection. Your saved roles are in Jobs.",
+      retry: "Try again",
+      pulse: (roles: number) => {
+        const h = new Date().getHours();
+        const part = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
+        return `${part} · ${roles} roles open right now`;
+      },
+      pulseFallback: "Roles are open right now",
+      headcount: (n: number) => `${n} positions`,
+    },
+    primary: {
+      label: "See all jobs",
+    },
+    learn: {
+      eyebrow: "Learn",
+      title: "Build practical career judgment",
+      detail: "Published lessons and local practice questions — works offline once saved.",
+    },
+    ydc: {
+      eyebrow: "For youth & family",
+      title: "Youth Development Center",
+      detail: "Grade path and practice on ReferTRM.com. Opens in your browser.",
+    },
+    browserDoors: {
+      header: "More of your journey — on ReferTRM.com",
+      opensInBrowser: "Opens in your browser",
+      rows: {
+        careerGame: "Career Game",
+        askMaya: "Ask Maya",
+        trinity: "Trinity",
+        cv: "CV Builder",
+        referrals: "Referrals",
+      },
+    },
+    provenance: {
+      line: "Platform: ReferTRM · company of record: Talent Resources Myanmar Co., Ltd. · Licence No. 211/2024",
+    },
+  },
+
   errors: {
     generic: "Something went wrong. Try again.",
     notFound: "Not found.",

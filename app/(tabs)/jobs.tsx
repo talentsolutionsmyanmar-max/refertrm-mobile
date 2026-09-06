@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { filterJobs, type JobPlace } from "../../src/api/filter";
 import { loadJobs } from "../../src/api/load";
 import { jobTypeLabel } from "../../src/api/project";
-import { Banner, Chip, RetryState } from "../../src/components/ui";
+import { Banner, Chip, RetryState, Skeleton } from "../../src/components/ui";
 import { errorMessage } from "../../src/copy/error";
 import { copy } from "../../src/copy/en";
 import { useOnline } from "../../src/hooks/useOnline";
 import { color, tap } from "../../src/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 
 const PLACES: { id: JobPlace; label: string }[] = [
   { id: "all", label: copy.jobs.filterAll },
@@ -20,6 +21,7 @@ const PLACES: { id: JobPlace; label: string }[] = [
 ];
 
 export default function JobsScreen() {
+  const t = useTheme();
   const online = useOnline();
   const query = useQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
   const [search, setSearch] = useState("");
@@ -29,24 +31,24 @@ export default function JobsScreen() {
   const stale = Boolean(query.data?.fromCache) || !online;
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.bg0 }}>
       {stale && jobs.length > 0 ? <Banner text={online ? copy.offline.stale : copy.offline.banner} /> : null}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ color: color.muted, marginBottom: 8 }}>{copy.jobs.count(jobs.length)}</Text>
+        <Text style={{ color: t.colors.mut, marginBottom: 8 }}>{copy.jobs.count(jobs.length)}</Text>
         <TextInput
           value={search}
           onChangeText={setSearch}
           placeholder={copy.jobs.search}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={t.colors.dim}
           autoCorrect={false}
           autoCapitalize="none"
           style={{
             minHeight: tap,
             borderWidth: 1,
-            borderColor: color.line,
+            borderColor: t.colors.line,
             borderRadius: 8,
             paddingHorizontal: 12,
-            color: color.navy,
+            color: t.colors.ink,
           }}
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
@@ -58,9 +60,11 @@ export default function JobsScreen() {
       {jobs.length === 0 && query.isError ? (
         <RetryState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : jobs.length === 0 && query.isLoading ? (
-        <View style={{ padding: 24, alignItems: "center", gap: 8 }}>
-          <ActivityIndicator color="#0D9488" />
-          <Text style={{ color: color.muted }}>{copy.errors.connecting}</Text>
+        <View style={{ padding: 24, gap: 8 }}>
+          <Skeleton width="40%" height={12} />
+          <Skeleton width="85%" height={16} />
+          <Skeleton width="65%" height={16} />
+          <Text style={{ color: t.colors.mut }}>{copy.errors.connecting}</Text>
         </View>
       ) : (
         <FlatList
@@ -68,36 +72,40 @@ export default function JobsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
           ListEmptyComponent={
-            <Text style={{ color: color.muted, paddingVertical: 16 }}>
+            <Text style={{ color: t.colors.mut, paddingVertical: 16 }}>
               {jobs.length === 0 ? copy.jobs.emptyOffline : copy.jobs.empty}
             </Text>
           }
           renderItem={({ item }) => (
             <Link href={`/jobs/${item.id}`} asChild>
+              {/* G1 — box on the inner View; the asChild Pressable carries press feedback only. */}
               <Pressable
                 accessibilityRole="button"
-                style={{
-                  borderWidth: 1,
-                  borderColor: color.line,
-                  borderRadius: 8,
-                  padding: 16,
-                  backgroundColor: color.white,
-                  minHeight: tap,
-                }}
+                style={({ pressed }) => ({ minHeight: tap, opacity: pressed ? 0.9 : 1 })}
               >
+                <View
+                  style={{
+                    borderWidth: 1,
+                    borderColor: t.colors.line,
+                    borderRadius: 8,
+                    padding: 16,
+                    backgroundColor: t.colors.ink,
+                  }}
+                >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
-                  <Text style={{ color: color.navy, fontWeight: "700", fontSize: 16, flex: 1 }}>{item.title}</Text>
+                  <Text style={{ color: t.colors.ink, fontWeight: "700", fontSize: 16, flex: 1 }}>{item.title}</Text>
                   {item.urgent ? (
-                    <Text style={{ color: color.navy, fontSize: 12, fontWeight: "700" }}>{copy.jobs.urgent}</Text>
+                    <Text style={{ color: t.colors.ink, fontSize: 12, fontWeight: "700" }}>{copy.jobs.urgent}</Text>
                   ) : null}
                 </View>
-                <Text style={{ color: color.muted, marginTop: 4 }}>{item.company?.name}</Text>
-                <Text style={{ color: color.muted, marginTop: 8, fontSize: 12 }}>
+                <Text style={{ color: t.colors.mut, marginTop: 4 }}>{item.company?.name}</Text>
+                <Text style={{ color: t.colors.mut, marginTop: 8, fontSize: 12 }}>
                   {item.location || copy.jobs.locationUnknown}
                   {" · "}
                   {item.salaryDisplay || copy.jobs.salaryHidden}
                   {jobTypeLabel(item.type) ? ` · ${jobTypeLabel(item.type)}` : ""}
                 </Text>
+                </View>
               </Pressable>
             </Link>
           )}
