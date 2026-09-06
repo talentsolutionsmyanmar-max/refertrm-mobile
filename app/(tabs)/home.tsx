@@ -44,7 +44,8 @@ function HeroJobSlot() {
   const query = useQuery({ queryKey: ["hero-job"], queryFn: ({ signal }) => loadHeroJob(signal) });
   const job = query.data?.job ?? null;
 
-  // G2a — cap the visible skeleton at 8s; the fetch may still land and swap in.
+  // G2a — cap the visible skeleton at 5s (HERO_VISIBLE_LOADING_MS); the fetch
+  // runs to 8s (HERO_TIMEOUT_MS), so the role can still land during SLOW.
   const [loadingBudgetSpent, setLoadingBudgetSpent] = useState(false);
   useEffect(() => {
     if (!query.isLoading || job) {

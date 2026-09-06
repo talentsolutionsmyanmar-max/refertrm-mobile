@@ -2,10 +2,22 @@ import { useEffect, useState } from "react";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Linking from "expo-linking";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import NetInfo from "@react-native-community/netinfo";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { parseDeepLink } from "../src/linking/paths";
 import { isHttpsStartUrl, openStartInBrowser } from "../src/linking/start";
 import { copy } from "../src/copy/en";
+
+// T1 — TanStack Query v5 does not auto-wire NetInfo in React Native; its default
+// onlineManager listens for window online/offline events that do not exist here,
+// so isOnline() would stay true forever and query fetchStatus would never reach
+// "paused". Wire the real connectivity signal so the hero's offline state (and
+// refetchOnReconnect) actually work on a phone with no connectivity.
+onlineManager.setEventListener((setOnline) =>
+  NetInfo.addEventListener((state) => {
+    setOnline(state.isConnected !== false && state.isInternetReachable !== false);
+  }),
+);
 
 export default function RootLayout() {
   const router = useRouter();

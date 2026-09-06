@@ -151,6 +151,26 @@ test("J1 — visible skeleton budget is strictly shorter than the fetch budget (
   assert.ok(visible < fetchBudget, `visible budget (${visible}) must be strictly < fetch budget (${fetchBudget})`);
 });
 
+test("T1 — onlineManager is wired to NetInfo on the launch path (offline state is reachable)", () => {
+  // TanStack Query v5 does not auto-wire NetInfo in RN — without this, isOnline()
+  // stays true forever, fetchStatus never reaches 'paused', and the hero's
+  // offline state is dead code. The wiring must live where the QueryClient is
+  // created (the launch path).
+  const layout = readFileSync(join(root, "app/_layout.tsx"), "utf8");
+  assert.ok(layout.includes("onlineManager.setEventListener"), "onlineManager.setEventListener must be wired");
+  assert.ok(layout.includes('from "@react-native-community/netinfo"'), "NetInfo must be the signal source");
+});
+
+test("T2 — no stale budget comment next to the constant it describes", () => {
+  // A comment asserting a false value is how the last two bugs survived review.
+  // The visible-budget constant reads 5_000; no comment may still claim 8s for it.
+  const commentIdx = home.indexOf("G2a — cap the visible skeleton");
+  assert.ok(commentIdx >= 0);
+  const commentLine = home.slice(commentIdx, home.indexOf("\n", commentIdx));
+  assert.equal(commentLine.includes("8s"), false, "the cap comment must not claim 8s when the constant is 5s");
+  assert.ok(home.includes("HERO_VISIBLE_LOADING_MS = 5_000"));
+});
+
 test("J2 — HeroJobSlot has no silent null path (offline + unclassified both render honest states)", () => {
   const heroFn = home.slice(home.indexOf("function HeroJobSlot"), home.indexOf("function BrowserDoorRow"));
   assert.equal(heroFn.includes("return null"), false, "HeroJobSlot must never return null — every null-job path renders an honest state");
