@@ -141,3 +141,32 @@ test("T5 — the retired 3G law is not re-stated in any tokens/lint narrative th
   assert.equal(/3G law/i.test(theme), false, "the retired 3G law must not be re-stated in theme.ts");
   assert.equal(/zero images, zero webfonts, zero external asset calls/i.test(theme), false);
 });
+
+test("K2 — zero consumers of the deleted polysemous keys anywhere outside their absence (the type system is the gate, this is the proof)", () => {
+  // 008's instruction was to DELETE the ambiguous keys, not deprecate them. A
+  // deleted key makes every remaining consumer a TypeScript compile error —
+  // stronger than any test, it cannot be forgotten and it enumerates itself.
+  // This gate proves the deletion held: no reference to a deleted key survives
+  // in src/** + app/**. A pair that cannot be constructed cannot fail.
+  const DELETED = ["color.navy", "color.cream", "color.paper", "color.tealDark", "color.goldSoftBg", "color.muted"];
+  const offenders: string[] = [];
+  const stack = [join(root, "src"), join(root, "app")];
+  while (stack.length) {
+    const d = stack.pop()!;
+    for (const entry of readdirSync(d, { withFileTypes: true })) {
+      const full = join(d, entry.name);
+      if (entry.isDirectory()) stack.push(full);
+      else if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) {
+        const src = readFileSync(full, "utf8");
+        for (const key of DELETED) {
+          if (src.includes(key)) offenders.push(`${full.slice(root.length + 1)}: ${key}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], `references to deleted polysemous keys survive:\n${offenders.join("\n")}`);
+  // And the keys are genuinely absent from the export (not commented-out).
+  for (const key of ["navy:", "cream:", "paper:", "tealDark:", "goldSoftBg:", "muted:"]) {
+    assert.equal(theme.includes(key), false, `theme.ts must not define ${key}`);
+  }
+});

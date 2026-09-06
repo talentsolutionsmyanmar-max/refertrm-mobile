@@ -1,11 +1,16 @@
 import { Pressable, Text, View } from "react-native";
-import { color, tap, type } from "../../theme";
+import { tap, type } from "../../theme";
+import { useTheme } from "../../theme/ThemeProvider";
 
 /**
  * CONSUMER-UIUX-1 §3 R2 — three weights, no fourth.
  * The 3px borderTop-as-only-difference pattern is retired: weight is
  * carried by type size, spacing, and grouping, not coloured borders.
- * hero 22/28 full width · standard 16/22 · quiet 13/18 grouped.
+ * hero (display 26) · standard 20/28 · quiet 13/18 grouped.
+ *
+ * NIGHT-TOKENS-008/010: themed via useTheme(). The legacy `color` shim's
+ * polysemous keys (navy/cream/…) are deleted — text resolves to ink/mut,
+ * surfaces to panel, never one ambiguous name.
  */
 export type HomeWeight = "hero" | "standard" | "quiet";
 
@@ -25,6 +30,11 @@ const TILE_MARK: Record<HomeTile, string> = {
 };
 
 function Tile({ kind }: { kind: HomeTile }) {
+  const t = useTheme();
+  // The teal tile is a light fill on day, dark on night — the mark's ink
+  // follows the fill's brightness, not the theme's page ink (bg0 is dark on
+  // night, light on day; the tile needs the OPPOSITE on day: dark ink).
+  const markColor = t.name === "night" ? t.colors.bg0 : "#141B33";
   return (
     <View
       accessibilityElementsHidden
@@ -33,13 +43,13 @@ function Tile({ kind }: { kind: HomeTile }) {
         width: 44,
         height: 44,
         borderRadius: 10,
-        backgroundColor: color.teal,
+        backgroundColor: t.accents.teal,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 10,
       }}
     >
-      <Text style={{ color: color.white, ...type.monoLabel, fontWeight: "800", letterSpacing: 1 }}>{TILE_MARK[kind]}</Text>
+      <Text style={{ color: markColor, ...type.monoLabel, fontWeight: "800", letterSpacing: 1 }}>{TILE_MARK[kind]}</Text>
     </View>
   );
 }
@@ -64,60 +74,25 @@ export function HomeModule({
   accent?: "navy" | "gold" | "teal";
   children?: React.ReactNode;
 }) {
+  const t = useTheme();
   const titleStyle = weight === "hero" ? type.display : weight === "quiet" ? type.bodySm : type.standard;
   const detailStyle = weight === "quiet" ? type.bodySm : type.body;
   return (
     <View
       style={{
         borderWidth: 1,
-        borderColor: color.line,
+        borderColor: t.colors.line,
         borderRadius: 12,
-        backgroundColor: color.cream,
+        backgroundColor: t.colors.panel,
         padding: 16,
         flex: fill ? 1 : undefined,
       }}
     >
       {tile ? <Tile kind={tile} /> : null}
-      <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{eyebrow}</Text>
-      <Text style={{ color: color.navy, ...titleStyle, fontWeight: "700", marginTop: 6 }}>{title}</Text>
-      {detail ? <Text style={{ color: color.muted, ...detailStyle, marginTop: 5 }}>{detail}</Text> : null}
+      <Text style={{ color: t.colors.mut, ...type.monoLabel, fontWeight: "700" }}>{eyebrow}</Text>
+      <Text style={{ color: t.colors.ink, ...titleStyle, fontWeight: "700", marginTop: 6 }}>{title}</Text>
+      {detail ? <Text style={{ color: t.colors.mut, ...detailStyle, marginTop: 5 }}>{detail}</Text> : null}
       {children}
     </View>
-  );
-}
-
-export function HomeAction({
-  label,
-  tone,
-  onPress,
-}: {
-  label: string;
-  tone: "navy" | "gold";
-  onPress: () => void;
-}) {
-  const backgroundColor = tone === "gold" ? color.gold : color.navy;
-  const foreground = tone === "gold" ? color.navy : color.white;
-  return (
-    <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={`${label}. Opens ReferTRM.com in your browser.`}
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flex: 1,
-        minHeight: tap,
-        borderRadius: 10,
-        backgroundColor,
-        paddingHorizontal: 10,
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "row",
-        gap: 7,
-        opacity: pressed ? 0.82 : 1,
-      })}
-    >
-      <Text style={{ color: foreground, ...type.bodySm, fontWeight: "700", textAlign: "center", flexShrink: 1 }}>
-        {label}
-      </Text>
-    </Pressable>
   );
 }

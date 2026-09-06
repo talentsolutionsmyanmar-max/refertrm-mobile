@@ -152,6 +152,14 @@ function pairsFor(themeName: "night" | "day"): Pair[] {
     // UI shapes / skeleton (>= 3.0)
     { name: "skeleton bar on panel", fg: d.skeletonBg, bg: c.panel, kind: "shape" },
     { name: "card label strip on panel", fg: d.labelStripBg, bg: c.panel, kind: "shape" },
+    // K1 — the two components that shipped the 1.09:1 invisible-title pair are
+    // now themed via useTheme(): their title reads ink-on-panel, their meta
+    // mut-on-panel, and the ModuleState action is bg0-on-ink. Gated here.
+    { name: "HomeModule title (ink on panel) — was color.navy/color.cream 1.09:1", fg: c.ink, bg: c.panel, kind: "body" },
+    { name: "HomeModule eyebrow/detail (mut on panel)", fg: c.mut, bg: c.panel, kind: "body" },
+    { name: "ModuleState title (ink on panel) — Earn/Me state titles", fg: c.ink, bg: c.panel, kind: "body" },
+    { name: "ModuleState action button (bg0 text on ink fill)", fg: c.bg0, bg: c.ink, kind: "body" },
+    { name: "HomeModule tile mark (bg0 on night, dark ink on day) on teal tile", fg: themeName === "night" ? c.bg0 : "#141B33", bg: accents.teal, kind: "shape" },
     // Buttons
     { name: "bg0 text on ink (RetryState button)", fg: c.bg0, bg: c.ink, kind: "body" },
     // Active chip: ink fill, page-colored (bg0) text on it.

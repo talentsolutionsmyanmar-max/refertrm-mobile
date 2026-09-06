@@ -119,31 +119,23 @@ export const tap = 48;
 /** CONSUMER-UIUX-1 spacing, 4-base. Card padding 16 · gap 16 · gutter 16. */
 export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 32 } as const;
 
-/* ── Backward-compatible static color surface ─────────────────────────────
- * Existing consumers reference color.navy / color.cream / etc. Those names map
- * onto the active theme at runtime via useTheme(); the static `color` object is
- * the NIGHT default so a pre-hydration first paint is night, never a light flash.
- * New code should consume useTheme().colors / useTheme().accents.
- * navy #001F3F is NOT in the palette and leaves Home; the static navy key now
- * maps to the night panel family so existing refs degrade gracefully.
+/* ── The legacy static color shim is RETIRED (NIGHT-TOKENS-008/010). ──
+ * The ambiguous keys (navy, cream, paper, tealDark, goldSoftBg) were POLYSEMOUS:
+ * one name served both ink (text) and surface (fill) roles, which no single
+ * mapping satisfies on a dark palette — HA measured 1.09:1 both ways. Deleted,
+ * not deprecated: every remaining consumer is now a TypeScript compile error,
+ * so the type system enumerates the work and cannot be forgotten. tealDark
+ * (#4CC9C0) was an invented value never present in tokens.json (T1 forbids).
+ * Consume useTheme().colors / .accents / .derived for themed values.
+ * The keys below are the non-polysemous survivors used by legacy leaves pending
+ * their own token pass.
  */
 export const color = {
-  /** @deprecated use useTheme().colors — static surface is the night default. */
-  navy: night.bg1,
   gold: accents.gold,
   teal: accents.teal,
-  tealDark: "#4CC9C0",
-  muted: night.mut,
   line: night.line,
   bg: night.bg0,
   white: "#FFFFFF",
-  cream: night.panel,
-  paper: night.bg0,
-  correctBg: "rgba(94,234,212,0.12)",
   correctBorder: accents.teal,
-  wrongBg: "rgba(255,110,127,0.10)",
   wrongBorder: "#FF6E7F",
-  goldSoftBg: "rgba(255,209,102,0.10)",
-  goldSoftBorder: "rgba(255,209,102,0.30)",
-  goldText: accents.gold,
 } as const;
