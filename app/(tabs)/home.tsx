@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { AppState, Image, Pressable, ScrollView, Text, View, type AppStateStatus } from "react-native";
 import { Link } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,8 +12,11 @@ import {
   bandForSeed,
   bandIndex,
   classifyJobBand,
+  heroSeed,
   HERO_BAND_ORDER,
   pickHeroJob,
+  positionsFromTitle,
+  shouldReseedAfterBackground,
 } from "../../src/home/pickHeroJob";
 import {
   CV_URL,
@@ -106,6 +109,7 @@ function HeroRoleCard({
   const location = job.location?.trim() || copy.jobs.locationUnknown;
   const titleMatch = /^(.*?)\s*—\s*Hiring\s+(\d+)\s+positions?\s*$/i.exec(job.title);
   const title = titleMatch ? titleMatch[1].trim() : job.title;
+  const positions = positionsFromTitle(job.title);
 
   return (
     <Link href={`/jobs/${job.id}` as `/jobs/${string}`} asChild>
@@ -194,6 +198,30 @@ function HeroRoleCard({
                   >
                     <Text style={{ color: "#dbe5ed", fontFamily: font.mono, fontSize: 6.5, letterSpacing: 0.035 * 6.5 }}>
                       {copy.home.salaryShown}
+                    </Text>
+                  </View>
+                ) : null}
+                {positions != null ? (
+                  <View
+                    style={{
+                      minHeight: 18,
+                      paddingHorizontal: 7,
+                      borderRadius: radii.pill,
+                      borderWidth: 1,
+                      borderColor: color.lineInverse,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#dbe5ed",
+                        fontFamily: font.mono,
+                        fontSize: 6.5,
+                        fontWeight: "600",
+                        letterSpacing: 0.035 * 6.5,
+                      }}
+                    >
+                      {`${positions} POSITIONS`}
                     </Text>
                   </View>
                 ) : null}
@@ -494,8 +522,28 @@ function DoorCard({
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  // Once per mount, second granularity — cold start / remount gets a new role; stable within mount.
-  const seed = useRef(Math.floor(Date.now() / 1000)).current;
+  // Mount seed + AppState reseed after >20s background (Android resumes without remount).
+  const [seed, setSeed] = useState(() => heroSeed());
+  const backgroundedAtMs = useRef<number | null>(null);
+
+  useEffect(() => {
+    const onChange = (next: AppStateStatus) => {
+      if (next === "background" || next === "inactive") {
+        if (backgroundedAtMs.current == null) backgroundedAtMs.current = Date.now();
+        return;
+      }
+      if (next !== "active") return;
+      const started = backgroundedAtMs.current;
+      backgroundedAtMs.current = null;
+      if (started == null) return;
+      const now = Date.now();
+      if (shouldReseedAfterBackground(started, now)) {
+        setSeed(heroSeed(now));
+      }
+    };
+    const sub = AppState.addEventListener("change", onChange);
+    return () => sub.remove();
+  }, []);
 
   const jobsQuery = useQuery({
     queryKey: ["jobs"],

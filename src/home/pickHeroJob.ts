@@ -24,13 +24,34 @@ export function classifyJobBand(job: JobListItem): HeroBand | null {
 }
 
 /**
- * Second-granularity seed for mount-time hero pick.
- * Home holds this in a useRef so it is stable for one mount (no remount flicker)
- * but a cold start or remount gets a new seed. Strict band order across launches
- * is not guaranteed without persisted state (not authorised on the launch path).
+ * Second-granularity seed for hero pick.
+ * Home seeds on mount and may reseed on AppState "active" after a long background.
+ * Strict band order across launches is not guaranteed without persisted state
+ * (not authorised on the launch path).
  */
 export function heroSeed(nowMs: number = Date.now()): number {
   return Math.floor(nowMs / 1_000);
+}
+
+/** Foreground resume must exceed this gap before the hero reseed fires. */
+export const HERO_RESEED_AFTER_MS = 20_000;
+
+/** Pure gate for F15 — >20s background → reseed; ≤20s keep seed. */
+export function shouldReseedAfterBackground(
+  backgroundedAtMs: number,
+  resumedAtMs: number,
+  thresholdMs: number = HERO_RESEED_AFTER_MS,
+): boolean {
+  return resumedAtMs - backgroundedAtMs > thresholdMs;
+}
+
+/** "Title — Hiring N positions" → N when N > 0; otherwise null (no chip). */
+export function positionsFromTitle(title: string): number | null {
+  const match = /^(.*?)\s*—\s*Hiring\s+(\d+)\s+positions?\s*$/i.exec(title);
+  if (!match) return null;
+  const n = Number(match[2]);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n;
 }
 
 export function bandForSeed(seed: number): HeroBand {

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve, join } from "node:path";
 import {
   bandForSeed,
@@ -8,7 +9,10 @@ import {
   classifyJobBand,
   heroSeed,
   HERO_BAND_ORDER,
+  HERO_RESEED_AFTER_MS,
   pickHeroJob,
+  positionsFromTitle,
+  shouldReseedAfterBackground,
 } from "../src/home/pickHeroJob.ts";
 import type { JobListItem } from "../src/api/types.ts";
 
@@ -209,7 +213,10 @@ test("no Math.random call and no module-scope visit counter on Home", () => {
   const pick = readFileSync(resolve("src/home/pickHeroJob.ts"), "utf8");
   assert.equal(/Math\.random\s*\(/.test(home + pick), false);
   assert.equal(/heroVisitSeq/.test(home), false);
-  assert.match(home, /useRef\(Math\.floor\(Date\.now\(\) \/ 1000\)\)\.current/);
+  // AppState listener lives in an effect — never at module scope.
+  assert.match(home, /AppState\.addEventListener\("change"/);
+  assert.equal(/^AppState\.addEventListener/m.test(home), false);
+  assert.match(home, /shouldReseedAfterBackground/);
 });
 
 test("G13 game image wrapper has zIndex 0 and both right-corner radii", () => {
@@ -254,4 +261,51 @@ test("G17 hero chip label derives from classifyJobBand, not job.level", () => {
   assert.match(home, /band\.toUpperCase\(\)/);
   assert.equal(/level\.toUpperCase\(\)/.test(home), false);
   assert.equal(/job\.level/.test(home), false);
+});
+
+test("G18 earn tab icon densities present; earn.png differs from prior blob", () => {
+  const paths = ["assets/tabs/earn.png", "assets/tabs/earn@2x.png", "assets/tabs/earn@3x.png"];
+  for (const p of paths) assert.equal(existsSync(resolve(p)), true, p);
+  const sizes = [
+    [22, "assets/tabs/earn.png"],
+    [44, "assets/tabs/earn@2x.png"],
+    [66, "assets/tabs/earn@3x.png"],
+  ] as const;
+  // PNG IHDR width/height at bytes 16-23
+  for (const [px, rel] of sizes) {
+    const buf = readFileSync(resolve(rel));
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
+    assert.equal(w, px, rel);
+    assert.equal(h, px, rel);
+  }
+  const sha = createHash("sha256").update(readFileSync(resolve("assets/tabs/earn.png"))).digest("hex");
+  // Prior earn.png (pre HOME-RENDER-006) — must not match.
+  assert.notEqual(sha, "7546bca57e6be439f040fc39255f37f3b71f72bfd4c435a8cb0294d19d4584cc");
+});
+
+test("G19 >20s background yields new seed; <20s gap does not", () => {
+  const bg = 1_700_000_000_000;
+  assert.equal(HERO_RESEED_AFTER_MS, 20_000);
+  assert.equal(shouldReseedAfterBackground(bg, bg + 19_999), false);
+  assert.equal(shouldReseedAfterBackground(bg, bg + 20_000), false);
+  assert.equal(shouldReseedAfterBackground(bg, bg + 20_001), true);
+  const keepSeed = heroSeed(bg);
+  const reseedAt = bg + 30_000;
+  assert.equal(shouldReseedAfterBackground(bg, reseedAt), true);
+  assert.notEqual(heroSeed(reseedAt), keepSeed);
+  // Short gap: seed at resume equals seed at background second (same second bucket if <1s, but
+  // more importantly the gate says do not reseed — so product keeps prior seed).
+  assert.equal(shouldReseedAfterBackground(bg, bg + 5_000), false);
+});
+
+test("G20 positions chip only when title matches Hiring N positions", () => {
+  assert.equal(positionsFromTitle("Cashier"), null);
+  assert.equal(positionsFromTitle("Cashier — Hiring 0 positions"), null);
+  assert.equal(positionsFromTitle("Warehouse Supervisor — Hiring 5 positions"), 5);
+  assert.equal(positionsFromTitle("Clerk — Hiring 1 position"), 1);
+  const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+  assert.match(home, /positionsFromTitle\(job\.title\)/);
+  assert.match(home, /\$\{positions\} POSITIONS/);
+  assert.equal(/0 POSITIONS/.test(home), false);
 });
