@@ -22,15 +22,18 @@ import { color, tap, type, space } from "../../src/theme";
 
 const CV_URL = "https://www.refertrm.com/eq/cv-builder";
 
-/** G2 — the hero's visible loading state never outlives the ten-second budget. */
-const HERO_VISIBLE_LOADING_MS = 8_000;
+/** G2a/J1 — the visible skeleton budget (5s) is strictly shorter than the fetch
+ *  budget (HERO_TIMEOUT_MS, 8s). The 3s window is where SLOW shows and the role
+ *  can still land; the fetch dies at 8s. Never equalise the two budgets — that
+ *  makes SLOW unreachable and kills the swap-in promise. */
+const HERO_VISIBLE_LOADING_MS = 5_000;
 
 /** G2d/H3 — the failure explains itself with the true error class, never conflated. */
 function heroErrorMeta(error: unknown): string {
   // Distinct events, distinct strings: the fetch timing out (the request died at
   // the hero's own HERO_TIMEOUT_MS) vs the visible-skeleton budget expiring while
-  // the fetch is still alive (handled by the slow branch, "jobs · slow 8s") vs a
-  // transport failure vs a server error vs a successful empty fetch.
+  // the fetch is still alive (handled by the slow branch) vs a transport failure
+  // vs a server error vs a successful empty fetch.
   if (isTimeoutError(error)) return `jobs · timeout ${Math.round(HERO_TIMEOUT_MS / 1000)}s fetch`;
   if (isTransportError(error)) return "jobs · transport";
   return "jobs · server";
@@ -55,8 +58,12 @@ function HeroJobSlot() {
   const showLoading = query.isLoading && !job && !loadingBudgetSpent;
   // H1 — three distinct states, not two. Zero-role success is its own state.
   const showError = !job && query.isError; // fetch failed
-  const showSlow = !job && !query.isError && loadingBudgetSpent; // budget spent, fetch still alive
-  const showEmpty = !job && !query.isError && !query.isLoading && query.isFetched; // fetch ok, zero roles
+  // J2 — offline pauses the query (default networkMode 'online'): isPending true,
+  // isFetching false, isLoading false, isError false, isFetched false. Detect the
+  // pause explicitly so a connectionless phone never renders nothing.
+  const showOffline = !job && query.fetchStatus === "paused";
+  const showSlow = !job && !query.isError && !showOffline && loadingBudgetSpent; // budget spent, fetch still alive
+  const showEmpty = !job && !query.isError && !showOffline && !query.isLoading && query.isFetched; // fetch ok, zero roles
 
   if (showLoading) {
     return (
@@ -123,7 +130,25 @@ function HeroJobSlot() {
         <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
           {copy.home.heroJob.slow}
         </Text>
-        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>jobs · slow 8s</Text>
+        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>
+          {`jobs · slow ${Math.round(HERO_VISIBLE_LOADING_MS / 1000)}s`}
+        </Text>
+      </View>
+    );
+  }
+
+  if (showOffline) {
+    // J2 — paused query (offline): waiting for a connection, never "no jobs".
+    return (
+      <View
+        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        accessibilityLiveRegion="polite"
+      >
+        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
+          {copy.home.heroJob.offline}
+        </Text>
+        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>jobs · offline</Text>
       </View>
     );
   }
@@ -164,9 +189,22 @@ function HeroJobSlot() {
   }
 
   if (!job) {
-    // TS guard: the four states above cover every null-job path. If this ever
-    // renders, a new null path was added without a state — that is the bug.
-    return null;
+    // J2 — terminal fallback for any unclassified null-job path: render the
+    // honest empty card, never nothing. (The gate asserts this component has no
+    // bare null return — this is the third time a null path with no rendered
+    // state shipped, and it does not ship again.)
+    return (
+      <View
+        style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
+        accessibilityLiveRegion="polite"
+      >
+        <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+        <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
+          {copy.home.heroJob.empty}
+        </Text>
+        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>jobs · empty</Text>
+      </View>
+    );
   }
 
   return (

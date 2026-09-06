@@ -6,6 +6,7 @@
 export const copyMy = {
   "MOB.HOME.HERO_JOB.label": "",
   "MOB.HOME.HERO_JOB.nofee": "",
+  "MOB.HOME.HERO_JOB.offline": "",
   "MOB.HOME.PRIMARY.label": "",
   "MOB.HOME.LEARN.eyebrow": "",
   "MOB.HOME.LEARN.title": "",

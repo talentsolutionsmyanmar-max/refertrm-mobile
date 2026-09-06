@@ -135,8 +135,32 @@ test("FIX-002 — hero has three null-job states (empty / error / slow), none co
   // No silent fall-through: the TS guard comment must not claim unreachable.
   assert.equal(home.includes("Unreachable"), false, "the null-job path must not be called unreachable");
   // The three meta strings are distinct events with distinct labels.
-  for (const meta of ["jobs · empty", "jobs · slow 8s", "jobs · transport"]) {
+  for (const meta of ["jobs · empty", "jobs · transport"]) {
     assert.ok(home.includes(meta), `distinct meta "${meta}" must be present`);
+  }
+});
+
+test("J1 — visible skeleton budget is strictly shorter than the fetch budget (SLOW is reachable)", () => {
+  // If the two budgets are ever equalised, SLOW becomes a coin flip that loses
+  // (the abort fires at the same instant the budget expires) and the swap-in
+  // promise breaks. One line, permanent.
+  const visible = Number(/HERO_VISIBLE_LOADING_MS = ([\d_]+)/.exec(home)?.[1]?.replaceAll("_", ""));
+  const endpoints = readFileSync(join(root, "src/api/endpoints.ts"), "utf8");
+  const fetchBudget = Number(/HERO_TIMEOUT_MS = ([\d_]+)/.exec(endpoints)?.[1]?.replaceAll("_", ""));
+  assert.ok(Number.isFinite(visible) && Number.isFinite(fetchBudget), "both budgets must be readable constants");
+  assert.ok(visible < fetchBudget, `visible budget (${visible}) must be strictly < fetch budget (${fetchBudget})`);
+});
+
+test("J2 — HeroJobSlot has no silent null path (offline + unclassified both render honest states)", () => {
+  const heroFn = home.slice(home.indexOf("function HeroJobSlot"), home.indexOf("function BrowserDoorRow"));
+  assert.equal(heroFn.includes("return null"), false, "HeroJobSlot must never return null — every null-job path renders an honest state");
+  assert.ok(heroFn.includes('query.fetchStatus === "paused"'), "offline paused-query detection must exist");
+  assert.ok(home.includes("heroJob.offline"), "offline copy must be consumed");
+});
+
+test("FIX-003 gate — home.tsx consumes all five hero copy keys (empty · error · slow · offline · retry)", () => {
+  for (const key of ["heroJob.empty", "heroJob.error", "heroJob.slow", "heroJob.offline", "heroJob.retry"]) {
+    assert.ok(home.includes(`copy.home.${key}`), `home.tsx must consume copy.home.${key}`);
   }
 });
 

@@ -108,6 +108,7 @@ export const copy = {
       empty: "The jobs list came back empty.",
       error: "We couldn't reach the jobs list.",
       slow: "Still loading — it's taking longer than usual. Browse all jobs below while it finishes.",
+      offline: "Waiting for a connection. Your saved roles are in Jobs.",
       retry: "Try again",
     },
     primary: {

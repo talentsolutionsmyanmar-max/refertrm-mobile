@@ -15,7 +15,7 @@ export const JOBS_LIST_QUERY = "status=active&limit=500&view=summary";
 /** G2 — Home hero: one role only, the same summary projection. */
 export const HERO_JOB_QUERY = "status=active&limit=1&view=summary";
 
-/** G2 — the hero's visible loading state never outlives the ten-second Mother-Test budget. */
+/** G2/J1 — the hero's fetch budget (8s). Strictly longer than the visible skeleton budget so SLOW is reachable and a live fetch can outlast it. */
 export const HERO_TIMEOUT_MS = 8_000;
 
 export const laterEndpoints = {
