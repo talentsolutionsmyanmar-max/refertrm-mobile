@@ -167,6 +167,7 @@ test("G11 Learn caption is interpolated count + lessons; 193 absent", () => {
   assert.equal(/["']0 lessons["']/.test(home + en), false);
 });
 
+test("app.json expo-font plugin lists all six faces", () => {
   const app = JSON.parse(readFileSync(resolve("app.json"), "utf8"));
   const plugins: unknown[] = app.expo.plugins;
   const fontPlugin = plugins.find((p) => Array.isArray(p) && p[0] === "expo-font") as
