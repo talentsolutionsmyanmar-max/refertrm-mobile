@@ -8,16 +8,32 @@ import { parseDeepLink } from "../src/linking/paths";
 import { isHttpsStartUrl, openStartInBrowser } from "../src/linking/start";
 import { copy } from "../src/copy/en";
 
-// T1 — TanStack Query v5 does not auto-wire NetInfo in React Native; its default
-// onlineManager listens for window online/offline events that do not exist here,
-// so isOnline() would stay true forever and query fetchStatus would never reach
-// "paused". Wire the real connectivity signal so the hero's offline state (and
-// refetchOnReconnect) actually work on a phone with no connectivity.
-onlineManager.setEventListener((setOnline) =>
-  NetInfo.addEventListener((state) => {
-    setOnline(state.isConnected !== false && state.isInternetReachable !== false);
-  }),
-);
+/**
+ * T1/K1 — TanStack Query v5 does not auto-wire NetInfo in React Native; its
+ * default onlineManager listens for window online/offline events that do not
+ * exist here, so isOnline() would stay true forever and query fetchStatus would
+ * never reach "paused". Wire the real connectivity signal so the hero's offline
+ * state (and refetchOnReconnect) actually work on a phone with no connectivity.
+ *
+ * The listener is set inside RootLayout's useEffect, never at module scope: a
+ * module-scope side effect touching a native module at import time is the same
+ * risk shape as the two launch crashes this repo already ate. A throw is
+ * swallowed and logged — worst case, the app degrades to pre-T1 behaviour
+ * (isOnline() stays true, offline surfaces as jobs · transport), which is
+ * survivable. A one-tick race where a query mounts before the listener is wired
+ * is acceptable: the default is "online", i.e. current behaviour.
+ */
+function wireOnlineManager() {
+  try {
+    onlineManager.setEventListener((setOnline) =>
+      NetInfo.addEventListener((state) => {
+        setOnline(state.isConnected !== false && state.isInternetReachable !== false);
+      }),
+    );
+  } catch (error) {
+    console.warn("refertrm: online wiring unavailable; degrading to pre-T1 behaviour", error);
+  }
+}
 
 export default function RootLayout() {
   const router = useRouter();
@@ -34,6 +50,10 @@ export default function RootLayout() {
         },
       }),
   );
+
+  useEffect(() => {
+    wireOnlineManager();
+  }, []);
 
   useEffect(() => {
     function onUrl(url: string) {

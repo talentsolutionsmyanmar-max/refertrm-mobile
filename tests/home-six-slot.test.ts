@@ -151,14 +151,30 @@ test("J1 — visible skeleton budget is strictly shorter than the fetch budget (
   assert.ok(visible < fetchBudget, `visible budget (${visible}) must be strictly < fetch budget (${fetchBudget})`);
 });
 
-test("T1 — onlineManager is wired to NetInfo on the launch path (offline state is reachable)", () => {
-  // TanStack Query v5 does not auto-wire NetInfo in RN — without this, isOnline()
-  // stays true forever, fetchStatus never reaches 'paused', and the hero's
-  // offline state is dead code. The wiring must live where the QueryClient is
-  // created (the launch path).
+test("T1 — onlineManager is wired to NetInfo inside a useEffect with try/catch (offline state is reachable, launch is crash-safe)", () => {
+  // TanStack Query v5 does not auto-wire NetInfo in RN — without wiring,
+  // isOnline() stays true forever, fetchStatus never reaches 'paused', and the
+  // hero's offline state is dead code. K1: the listener must NOT run at module
+  // scope (import-time native side effect = the launch-crash shape this repo
+  // already ate twice) — it must run inside a useEffect, wrapped in try/catch,
+  // so a NetInfo throw degrades to pre-T1 behaviour instead of white-screening.
   const layout = readFileSync(join(root, "app/_layout.tsx"), "utf8");
   assert.ok(layout.includes("onlineManager.setEventListener"), "onlineManager.setEventListener must be wired");
   assert.ok(layout.includes('from "@react-native-community/netinfo"'), "NetInfo must be the signal source");
+  // Inside a useEffect, not at module scope: the call site must sit after the
+  // component's useEffect that invokes the wiring function.
+  assert.ok(/useEffect\(\(\) => \{\s*wireOnlineManager\(\)/.test(layout), "wiring must run inside useEffect via wireOnlineManager()");
+  // The wiring function itself must be wrapped in try/catch.
+  const fnIdx = layout.indexOf("function wireOnlineManager");
+  const fnBody = layout.slice(fnIdx, layout.indexOf("\n}\n", fnIdx));
+  assert.ok(fnBody.includes("try"), "wireOnlineManager must wrap the listener in try/catch");
+  assert.ok(fnBody.includes("catch"), "wireOnlineManager must catch so a NetInfo throw cannot crash launch");
+  // And no module-scope native call: nothing between the last import and the
+  // function declaration may invoke onlineManager.
+  const lastImport = layout.lastIndexOf('from "');
+  const betweenImportsAndComponent = layout.slice(lastImport, fnIdx);
+  assert.equal(betweenImportsAndComponent.includes("onlineManager.setEventListener("), false,
+    "no module-scope onlineManager side effect may survive");
 });
 
 test("T2 — no stale budget comment next to the constant it describes", () => {
