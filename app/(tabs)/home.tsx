@@ -1,12 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeModule } from "../../src/components/home/HomeModule";
 import { Skeleton } from "../../src/components/ui";
-import { loadAcademy, loadJobs } from "../../src/api/load";
+import { loadAcademy, loadHeroJob, loadJobs } from "../../src/api/load";
 import { errorMessage } from "../../src/copy/error";
+import { isTimeoutError, isTransportError } from "../../src/api/signal";
 import {
   GAME_URL,
   MAYA_URL,
@@ -20,18 +21,36 @@ import { color, tap, type, space } from "../../src/theme";
 
 const CV_URL = "https://www.refertrm.com/eq/cv-builder";
 
-/**
- * CONSUMER-UIUX-1 §4 — Home is six slots, in order. The eleven equal
- * deferral cards are deleted (Earn / Settings / Saved / Notifications /
- * Journey progress leave Home; Earn keeps its tab).
- * Slot 2 is the only gold fill in viewport one (§3 R1).
- */
+/** G2 — the hero's visible loading state never outlives the ten-second budget. */
+const HERO_VISIBLE_LOADING_MS = 8_000;
+
+/** G2d — the failure explains itself: error class in the mono meta line. */
+function heroErrorMeta(error: unknown): string {
+  if (isTimeoutError(error)) return "jobs · timeout 8s";
+  if (isTransportError(error)) return "jobs · transport";
+  return "jobs · server";
+}
 
 function HeroJobSlot() {
-  const query = useQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
-  const job = query.data?.jobs[0];
+  // G2 — dedicated minimal fetch (limit=1), not the 214-role catalogue. Cache-first.
+  const query = useQuery({ queryKey: ["hero-job"], queryFn: ({ signal }) => loadHeroJob(signal) });
+  const job = query.data?.job ?? null;
 
-  if (query.isLoading && !job) {
+  // G2a — cap the visible skeleton at 8s; the fetch may still land and swap in.
+  const [loadingBudgetSpent, setLoadingBudgetSpent] = useState(false);
+  useEffect(() => {
+    if (!query.isLoading || job) {
+      setLoadingBudgetSpent(false);
+      return;
+    }
+    const timer = setTimeout(() => setLoadingBudgetSpent(true), HERO_VISIBLE_LOADING_MS);
+    return () => clearTimeout(timer);
+  }, [query.isLoading, job]);
+
+  const showLoading = query.isLoading && !job && !loadingBudgetSpent;
+  const showError = !job && (query.isError || loadingBudgetSpent);
+
+  if (showLoading) {
     return (
       <View
         style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16, gap: 10 }}
@@ -45,9 +64,8 @@ function HeroJobSlot() {
     );
   }
 
-  if (!job) {
+  if (showError) {
     // O2 — zero/failure is transport or empty, never "the market has no jobs".
-    const failed = query.isError;
     return (
       <View
         style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}
@@ -55,18 +73,21 @@ function HeroJobSlot() {
       >
         <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
         <Text style={{ color: color.navy, ...type.standard, fontWeight: "700", marginTop: 6 }}>
-          {failed ? copy.home.heroJob.error : copy.jobs.empty}
+          {copy.home.heroJob.error}
         </Text>
         <Text style={{ color: color.muted, ...type.body, marginTop: 5 }}>
-          {failed ? errorMessage(query.error) : copy.home.heroJob.empty}
+          {errorMessage(query.error)}
         </Text>
-        {failed ? (
-          <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>jobs · guest-public summary</Text>
-        ) : null}
+        <Text style={{ color: color.muted, ...type.monoLabel, marginTop: 6 }}>
+          {query.isError ? heroErrorMeta(query.error) : "jobs · timeout 8s"}
+        </Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={copy.home.heroJob.retry}
-          onPress={() => void query.refetch()}
+          onPress={() => {
+            setLoadingBudgetSpent(false);
+            void query.refetch();
+          }}
           style={({ pressed }) => ({
             minHeight: tap,
             marginTop: 12,
@@ -81,6 +102,11 @@ function HeroJobSlot() {
         </Pressable>
       </View>
     );
+  }
+
+  if (!job) {
+    // Unreachable: showLoading/showError cover the null paths. Guard for TS.
+    return null;
   }
 
   return (
@@ -156,16 +182,23 @@ export default function HomeScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={copy.home.primary.label}
-            style={({ pressed }) => ({
-              minHeight: tap,
-              borderRadius: 12,
-              backgroundColor: color.gold,
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: pressed ? 0.85 : 1,
-            })}
+            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
           >
-            <Text style={{ color: color.navy, ...type.standard, fontWeight: "800" }}>{copy.home.primary.label}</Text>
+            {/* G1 — the box lives on the inner View, never on the asChild Pressable.
+                Link asChild drops the child's own box styles on device; a Pressable
+                under it keeps press feedback only. */}
+            <View
+              style={{
+                minHeight: tap,
+                borderRadius: 12,
+                backgroundColor: color.gold,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 16,
+              }}
+            >
+              <Text style={{ color: color.navy, ...type.standard, fontWeight: "800" }}>{copy.home.primary.label}</Text>
+            </View>
           </Pressable>
         </Link>
         <Text style={{ color: color.tealDark, ...type.bodySm, fontWeight: "600", textAlign: "center" }}>

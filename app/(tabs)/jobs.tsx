@@ -74,17 +74,20 @@ export default function JobsScreen() {
           }
           renderItem={({ item }) => (
             <Link href={`/jobs/${item.id}`} asChild>
+              {/* G1 — box on the inner View; the asChild Pressable carries press feedback only. */}
               <Pressable
                 accessibilityRole="button"
-                style={{
-                  borderWidth: 1,
-                  borderColor: color.line,
-                  borderRadius: 8,
-                  padding: 16,
-                  backgroundColor: color.white,
-                  minHeight: tap,
-                }}
+                style={({ pressed }) => ({ minHeight: tap, opacity: pressed ? 0.9 : 1 })}
               >
+                <View
+                  style={{
+                    borderWidth: 1,
+                    borderColor: color.line,
+                    borderRadius: 8,
+                    padding: 16,
+                    backgroundColor: color.white,
+                  }}
+                >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
                   <Text style={{ color: color.navy, fontWeight: "700", fontSize: 16, flex: 1 }}>{item.title}</Text>
                   {item.urgent ? (
@@ -98,6 +101,7 @@ export default function JobsScreen() {
                   {item.salaryDisplay || copy.jobs.salaryHidden}
                   {jobTypeLabel(item.type) ? ` · ${jobTypeLabel(item.type)}` : ""}
                 </Text>
+                </View>
               </Pressable>
             </Link>
           )}

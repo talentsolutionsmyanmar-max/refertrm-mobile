@@ -1,7 +1,7 @@
 import { catalog } from "../cache/catalog";
 import { hydrateCatalogFromFile, persistCatalogToFile } from "../storage/fileKv";
 import { academyGeneration, jobCanonicalCommit, jobDetailGeneration, jobsGeneration, moduleGeneration } from "../cache/generation";
-import { fetchAcademy, fetchJob, fetchJobs, fetchModule } from "./client";
+import { fetchAcademy, fetchHeroJob, fetchJob, fetchJobs, fetchModule } from "./client";
 import {
   MalformedResponseError,
   parseAcademyEnvelope,
@@ -105,6 +105,35 @@ export async function loadJobs(signal?: AbortSignal): Promise<JobsLoad> {
     if (cached.jobsSyncedAt != null) {
       return { jobs: cached.jobs, fromCache: true, syncedAt: cached.jobsSyncedAt };
     }
+    throw error;
+  }
+}
+
+/**
+ * G2 — the Home hero shows ONE job; it must not pull the 214-role catalogue
+ * (192 KB) to do it, and its visible skeleton must never outlive the
+ * ten-second Mother-Test budget. Cache-first, then a dedicated minimal fetch
+ * (limit=1) — never the full list. The Jobs tab's own paging is untouched.
+ */
+
+export async function loadHeroJob(signal?: AbortSignal): Promise<{ job: JobListItem | null; fromCache: boolean }> {
+  await hydrateCatalogFromFile();
+  const cached = catalog.snapshot();
+  const cachedFirst = cached.jobs[0] ?? null;
+  try {
+    throwIfAborted(signal);
+    const raw = await fetchHeroJob(signal);
+    throwIfAborted(signal);
+    const parsed = parseJobsEnvelope(raw);
+    const jobs = rejectAllUnsafe(parsed, sanitizeJobs(parsed), "jobs");
+    throwIfAborted(signal);
+    const first = jobs[0] ?? null;
+    if (first) return { job: first, fromCache: false };
+    if (cachedFirst) return { job: cachedFirst, fromCache: true };
+    return { job: null, fromCache: false };
+  } catch (error) {
+    if (isAbortError(error)) throw error;
+    if (cachedFirst) return { job: cachedFirst, fromCache: true };
     throw error;
   }
 }

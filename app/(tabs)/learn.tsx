@@ -95,16 +95,20 @@ export default function AcademyScreen() {
           }
           renderItem={({ item }) => (
             <Link href={`/learn/${item.slug}`} asChild>
+              {/* G1 — box on the inner View; the asChild Pressable carries press feedback only. */}
               <Pressable
                 accessibilityRole="button"
-                style={{
-                  borderWidth: 1,
-                  borderColor: color.line,
-                  borderRadius: 8,
-                  padding: 16,
-                  minHeight: tap,
-                }}
+                style={({ pressed }) => ({ minHeight: tap, opacity: pressed ? 0.9 : 1 })}
               >
+                <View
+                  style={{
+                    borderWidth: 1,
+                    borderColor: color.line,
+                    borderRadius: 8,
+                    padding: 16,
+                    backgroundColor: color.white,
+                  }}
+                >
                 <Text style={{ color: color.navy, fontWeight: "700", fontSize: 16 }}>{item.titleEn}</Text>
                 <Text style={{ color: color.muted, marginTop: 4 }}>{item.category}</Text>
                 <Text style={{ color: color.muted, marginTop: 8, fontSize: 12 }}>
@@ -117,6 +121,7 @@ export default function AcademyScreen() {
                     {copy.academy.myanmarAvailable}
                   </Text>
                 ) : null}
+                </View>
               </Pressable>
             </Link>
           )}
