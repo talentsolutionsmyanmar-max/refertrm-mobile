@@ -8,7 +8,7 @@ import { isTimeoutError, isTransportError } from "../../src/api/signal";
 import { errorMessage } from "../../src/copy/error";
 import { Skeleton } from "../../src/components/ui";
 import { ArrowGlyph, ConstellationGlyph, PlayGlyph } from "../../src/home/glyphs";
-import { bandForVisit, pickHeroJob } from "../../src/home/pickHeroJob";
+import { bandForSeed, bandIndex, heroSeed, HERO_BAND_ORDER, pickHeroJob } from "../../src/home/pickHeroJob";
 import {
   CV_URL,
   GAME_URL,
@@ -24,9 +24,6 @@ import type { JobListItem } from "../../src/api/types";
 
 const HERO_VISIBLE_LOADING_MS = 5_000;
 const HERO_TIMEOUT_MS = 8_000;
-
-/** Module-scope visit counter — increments once per Home mount. No MMKV. */
-let heroVisitSeq = 0;
 
 function greetingLine(): string {
   const h = new Date().getHours();
@@ -193,7 +190,7 @@ function HeroRoleCard({
               ) : null}
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 7 }}>
-              {[0, 1, 2, 3].map((i) => (
+              {HERO_BAND_ORDER.map((_, i) => (
                 <View
                   key={i}
                   style={
@@ -305,16 +302,16 @@ function HeroStateCard({
   );
 }
 
-function HeroSlot({ visitIndex }: { visitIndex: number }) {
+function HeroSlot({ seed }: { seed: number }) {
   const query = useQuery({
     queryKey: ["jobs"],
     queryFn: ({ signal }) => loadJobs(signal),
   });
   const jobs = query.data?.jobs ?? [];
-  const job = useMemo(() => pickHeroJob(jobs, visitIndex), [jobs, visitIndex]);
+  const job = useMemo(() => pickHeroJob(jobs, seed), [jobs, seed]);
   const openCount = jobs.length > 0 ? jobs.length : null;
-  const band = bandForVisit(visitIndex);
-  const bandIndex = band === "manager" ? 0 : band === "entry" ? 1 : 2;
+  const activeBand = bandForSeed(seed);
+  const activeBandIndex = bandIndex(activeBand);
 
   const [loadingBudgetSpent, setLoadingBudgetSpent] = useState(false);
   useEffect(() => {
@@ -398,7 +395,7 @@ function HeroSlot({ visitIndex }: { visitIndex: number }) {
     );
   }
 
-  return <HeroRoleCard job={job} openCount={openCount} bandIndex={bandIndex} />;
+  return <HeroRoleCard job={job} openCount={openCount} bandIndex={activeBandIndex} />;
 }
 
 function JobsActionRow({ openCount }: { openCount: number | null }) {
@@ -485,7 +482,7 @@ function DoorCard({
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const visitIndex = useRef(++heroVisitSeq).current;
+  const seed = useRef(heroSeed()).current;
 
   const jobsQuery = useQuery({
     queryKey: ["jobs"],
@@ -565,7 +562,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={{ marginTop: 9, gap: 7 }}>
-        <HeroSlot visitIndex={visitIndex} />
+        <HeroSlot seed={seed} />
         <JobsActionRow openCount={openCount} />
 
         {/* 02 LEARN + 03 GAME */}
@@ -776,7 +773,12 @@ export default function HomeScreen() {
           >
             04
           </Text>
-          <View style={{ width: 26, height: 26, zIndex: 1 }} />
+          <Image
+            source={require("../../assets/home/ydc-glyph.png")}
+            style={{ width: 26, height: 26, zIndex: 1 }}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
           <View style={{ flex: 1, zIndex: 1 }}>
             <Text style={{ color: color.amber, fontFamily: font.mono, fontSize: 7.5, letterSpacing: 0.08 * 7.5, marginBottom: 2 }}>
               {copy.home.ydcLabel} / YOUTH DEVELOPMENT CENTER

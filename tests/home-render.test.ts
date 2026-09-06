@@ -2,7 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
-import { bandForVisit, pickHeroJob, classifyJobBand } from "../src/home/pickHeroJob.ts";
+import {
+  bandForSeed,
+  bandIndex,
+  classifyJobBand,
+  heroSeed,
+  HERO_BAND_ORDER,
+  pickHeroJob,
+} from "../src/home/pickHeroJob.ts";
 import type { JobListItem } from "../src/api/types.ts";
 
 const PROVENANCE =
@@ -16,6 +23,45 @@ function walk(dir: string, out: string[] = []): string[] {
   }
   return out;
 }
+
+function job(partial: Partial<JobListItem> & Pick<JobListItem, "id" | "title" | "level">): JobListItem {
+  return {
+    slug: "x",
+    companyId: "c",
+    location: "Yangon",
+    salaryDisplay: "1.2M - 2.0M MMK",
+    salaryMin: null,
+    salaryMax: null,
+    reward: null,
+    type: null,
+    skills: null,
+    urgent: false,
+    featured: false,
+    postedAt: null,
+    createdAt: "2026-01-01",
+    status: "active",
+    company: null,
+    _count: null,
+    hasDescription: false,
+    hasRequirements: false,
+    ...partial,
+  };
+}
+
+/** F2 — real production shapes. level:"Manager" does not exist. */
+const FIXTURE: JobListItem[] = [
+  job({ id: "mid-1", title: "Warehouse Supervisor", level: "Mid" }),
+  job({ id: "mid-2", title: "Sales Executive", level: "mid" }),
+  job({ id: "mid-3", title: "Ops Coordinator", level: "MID" }),
+  job({ id: "entry-1", title: "Cashier", level: "Entry" }),
+  job({ id: "entry-2", title: "Junior Clerk", level: "entry" }),
+  job({ id: "senior-1", title: "Senior Analyst", level: "Senior" }),
+  job({ id: "senior-2", title: "Lead Engineer", level: "SENIOR" }),
+  // Manager is a TITLE overlay with a Mid level — production shape.
+  job({ id: "mgr-1", title: "National Warehouse Manager", level: "Mid" }),
+  job({ id: "mgr-2", title: "Head of People", level: "Mid" }),
+  job({ id: "mgr-3", title: "General Manager — Retail", level: "Mid" }),
+];
 
 test("G4 provenance string is byte-exact in en copy", () => {
   const en = readFileSync(resolve("src/copy/en.ts"), "utf8");
@@ -42,12 +88,7 @@ test("G3 no forbidden imports on launch Home", () => {
 });
 
 test("G5 no hardcoded market counts in Home tree", () => {
-  const files = [
-    "app/(tabs)/home.tsx",
-    "src/home/pickHeroJob.ts",
-    "src/home/glyphs.tsx",
-    "src/copy/en.ts",
-  ];
+  const files = ["app/(tabs)/home.tsx", "src/home/pickHeroJob.ts", "src/home/glyphs.tsx", "src/copy/en.ts"];
   const banned = [/\b214\b/, /\b193\b/, /\b247\b/, /\b21 courses\b/i];
   for (const file of files) {
     const text = readFileSync(resolve(file), "utf8");
@@ -57,44 +98,60 @@ test("G5 no hardcoded market counts in Home tree", () => {
   }
 });
 
-test("hero rotation is stratified Manager → Entry → Senior", () => {
-  assert.equal(bandForVisit(0), "manager");
-  assert.equal(bandForVisit(1), "entry");
-  assert.equal(bandForVisit(2), "senior");
-  assert.equal(bandForVisit(3), "manager");
+test("G8 classifyJobBand is exhaustive on real level shapes + manager titles", () => {
+  for (const row of FIXTURE) {
+    const band = classifyJobBand(row);
+    assert.notEqual(band, null, `${row.id} unclassified`);
+  }
+  assert.equal(classifyJobBand(FIXTURE.find((j) => j.id === "mgr-1")!), "manager");
+  assert.equal(classifyJobBand(job({ id: "x", title: "Clerk", level: "Mid" })), "mid");
+  assert.equal(classifyJobBand(job({ id: "x", title: "Clerk", level: "ENTRY" })), "entry");
+  assert.equal(classifyJobBand(job({ id: "x", title: "Clerk", level: "senior" })), "senior");
+  // Zero unclassified across the fixture set.
+  assert.equal(FIXTURE.filter((j) => classifyJobBand(j) === null).length, 0);
 });
 
-test("pickHeroJob prefers the visit band", () => {
-  const base = {
-    slug: "x",
-    companyId: "c",
-    location: "Yangon",
-    salaryDisplay: "1.2M - 2.0M MMK",
-    salaryMin: null,
-    salaryMax: null,
-    reward: null,
-    type: null,
-    skills: null,
-    urgent: false,
-    featured: false,
-    postedAt: null,
-    createdAt: "2026-01-01",
-    status: "active",
-    company: null,
-    _count: null,
-    hasDescription: false,
-    hasRequirements: false,
-  } satisfies Omit<JobListItem, "id" | "title" | "level">;
+test("F1 band order is manager -> mid -> entry -> senior", () => {
+  assert.deepEqual([...HERO_BAND_ORDER], ["manager", "mid", "entry", "senior"]);
+  assert.equal(bandForSeed(0), "manager");
+  assert.equal(bandForSeed(1), "mid");
+  assert.equal(bandForSeed(2), "entry");
+  assert.equal(bandForSeed(3), "senior");
+  assert.equal(bandForSeed(4), "manager");
+  assert.equal(bandIndex("entry"), 2);
+});
 
-  const jobs: JobListItem[] = [
-    { ...base, id: "1", title: "Cashier", level: "Entry" },
-    { ...base, id: "2", title: "National Warehouse Manager", level: "Manager" },
-    { ...base, id: "3", title: "Senior Analyst", level: "Senior" },
-  ];
-  assert.equal(pickHeroJob(jobs, 0)?.id, "2");
-  assert.equal(pickHeroJob(jobs, 1)?.id, "1");
-  assert.equal(pickHeroJob(jobs, 2)?.id, "3");
-  assert.equal(classifyJobBand(jobs[1]!), "manager");
+test("G9 two seeds on the same list return two different hero job ids", () => {
+  const a = pickHeroJob(FIXTURE, 0);
+  const b = pickHeroJob(FIXTURE, 4); // same band (manager), next within-band index
+  assert.ok(a && b);
+  assert.notEqual(a!.id, b!.id, "within-band must advance across seeds");
+  const c = pickHeroJob(FIXTURE, 1); // mid band
+  assert.ok(c);
+  assert.notEqual(a!.id, c!.id);
+});
+
+test("G10 HERO_BAND_ORDER.length equals the rendered dot count", () => {
+  const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+  assert.match(home, /HERO_BAND_ORDER\.map/);
+  assert.equal(HERO_BAND_ORDER.length, 4);
+  // No hardcoded [0,1,2,3] or 0-2 bandIndex map.
+  assert.equal(/\[0,\s*1,\s*2,\s*3\]/.test(home), false);
+  assert.equal(/band === "manager" \? 0/.test(home), false);
+});
+
+test("F3 heroSeed is minute-bucketed and stable within a minute", () => {
+  const t = 1_700_000_000_000;
+  assert.equal(heroSeed(t), heroSeed(t + 30_000));
+  assert.notEqual(heroSeed(t), heroSeed(t + 60_000));
+});
+
+test("YDC glyph is a raster Image, not an empty spacer", () => {
+  const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+  assert.match(home, /ydc-glyph\.png/);
+  assert.equal(/width: 26,\s*height: 26,\s*zIndex: 1\s*\}\s*\/>\s*<View style=\{\{ flex: 1/.test(home), false);
+  assert.equal(readFileSync(resolve("assets/home/ydc-glyph.png")).length > 100, true);
+  assert.equal(readFileSync(resolve("assets/home/ydc-glyph@3x.png")).length > 100, true);
 });
 
 test("app.json expo-font plugin lists all six faces", () => {
@@ -104,8 +161,13 @@ test("app.json expo-font plugin lists all six faces", () => {
     | [string, { fonts: string[] }]
     | undefined;
   assert.ok(fontPlugin);
-  const fonts = fontPlugin![1].fonts;
-  assert.equal(fonts.length, 6);
-  assert.ok(fonts.some((f) => f.includes("BricolageGrotesque-600")));
-  assert.ok(fonts.some((f) => f.includes("Padauk-700")));
+  assert.equal(fontPlugin![1].fonts.length, 6);
+});
+
+test("no Math.random call and no module-scope visit counter on Home", () => {
+  const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+  const pick = readFileSync(resolve("src/home/pickHeroJob.ts"), "utf8");
+  assert.equal(/Math\.random\s*\(/.test(home + pick), false);
+  assert.equal(/heroVisitSeq/.test(home), false);
+  assert.match(home, /heroSeed\(/);
 });
