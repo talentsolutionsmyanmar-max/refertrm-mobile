@@ -114,6 +114,7 @@ export const copy = {
     salaryShown: "SALARY SHOWN",
     learnLabel: "02 / LEARN",
     learnTitle: "Build what comes next.",
+    learnLessons: (n: number) => `${n} lessons`,
     gameLabel: "03 / CAREER GAME",
     gameTitle: "Decide under pressure.",
     gameDetail: "Real workplace dilemmas.",

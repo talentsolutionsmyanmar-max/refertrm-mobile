@@ -154,7 +154,19 @@ test("YDC glyph is a raster Image, not an empty spacer", () => {
   assert.equal(readFileSync(resolve("assets/home/ydc-glyph@3x.png")).length > 100, true);
 });
 
-test("app.json expo-font plugin lists all six faces", () => {
+test("G11 Learn caption is interpolated count + lessons; 193 absent", () => {
+  const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+  const en = readFileSync(resolve("src/copy/en.ts"), "utf8");
+  assert.equal(/\b193\b/.test(home + en), false);
+  assert.equal(/21 courses/i.test(home + en), false);
+  assert.equal(/all free/i.test(home + en), false);
+  assert.match(en, /learnLessons:\s*\(n:\s*number\)\s*=>\s*`\$\{n\} lessons`/);
+  assert.match(home, /copy\.home\.learnLessons\(lessonCount\)/);
+  // "lessons" only via the interpolator — no bare caption string in home.tsx
+  assert.equal(/["']\d+ lessons["']/.test(home), false);
+  assert.equal(/["']0 lessons["']/.test(home + en), false);
+});
+
   const app = JSON.parse(readFileSync(resolve("app.json"), "utf8"));
   const plugins: unknown[] = app.expo.plugins;
   const fontPlugin = plugins.find((p) => Array.isArray(p) && p[0] === "expo-font") as

@@ -3,7 +3,7 @@ import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { loadJobs } from "../../src/api/load";
+import { loadAcademy, loadJobs } from "../../src/api/load";
 import { isTimeoutError, isTransportError } from "../../src/api/signal";
 import { errorMessage } from "../../src/copy/error";
 import { Skeleton } from "../../src/components/ui";
@@ -488,10 +488,20 @@ export default function HomeScreen() {
     queryKey: ["jobs"],
     queryFn: ({ signal }) => loadJobs(signal),
   });
+  const academyQuery = useQuery({
+    queryKey: ["academy"],
+    queryFn: ({ signal }) => loadAcademy(signal),
+  });
   const openCount = (jobsQuery.data?.jobs?.length ?? 0) > 0 ? jobsQuery.data!.jobs.length : null;
+  // AcademyModule public count — NOT academy_courses. Omit until a real positive count lands.
+  const lessonCount =
+    academyQuery.isSuccess && (academyQuery.data?.modules?.length ?? 0) > 0
+      ? academyQuery.data!.modules.length
+      : null;
 
   useEffect(() => {
     void queryClient.prefetchQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
+    void queryClient.prefetchQuery({ queryKey: ["academy"], queryFn: ({ signal }) => loadAcademy(signal) });
   }, [queryClient]);
 
   const greet = greetingLine();
@@ -606,7 +616,21 @@ export default function HomeScreen() {
                 >
                   {copy.home.learnTitle}
                 </Text>
-                {/* Academy lesson totals have no public endpoint — caption omitted (DATA CONTRACT). */}
+                {lessonCount != null ? (
+                  <View style={{ marginTop: 8, borderTopWidth: 1, borderTopColor: color.line, paddingTop: 8 }}>
+                    <Text
+                      style={{
+                        fontFamily: font.mono,
+                        fontSize: 6,
+                        fontWeight: "500",
+                        color: color.slate,
+                        letterSpacing: 0.04 * 6,
+                      }}
+                    >
+                      {copy.home.learnLessons(lessonCount)}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             </Pressable>
           </Link>
