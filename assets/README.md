@@ -1,13 +1,10 @@
 # Brand and Play assets
 
-Canonical artwork:
+Canonical artwork for in-app header:
 
-- `brand/logo-full.png` — 3073×1845 illustrated TRM logo + wordmark
-- `brand/logo-original.png` — 3073×1845 illustrated TRM logo + wordmark
+- `brand/trm-mark.png` / `@2x` / `@3x` — colour TRM mark (37×22 @1x). Height 22 is the floor; letters are tiny illustrations and smudge below that. No `tintColor`.
 
-Background: `#2A3764`, sampled from that master.
-
-The complete artwork is 2600×953. Square icons letterbox the full mark on navy. Letters are not cropped. No compact mark was invented.
+Background for launcher/play assets: `#2A3764`, sampled from the master illustration.
 
 | File | Size | Notes |
 | --- | --- | --- |

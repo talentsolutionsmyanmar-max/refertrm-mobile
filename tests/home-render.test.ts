@@ -309,3 +309,66 @@ test("G20 positions chip only when title matches Hiring N positions", () => {
   assert.match(home, /\$\{positions\} POSITIONS/);
   assert.equal(/0 POSITIONS/.test(home), false);
 });
+
+test("G23 header renders trm-mark Image with no tintColor", () => {
+  const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+  assert.match(home, /assets\/brand\/trm-mark\.png/);
+  // The mark Image block must not carry tintColor.
+  const mark = /source=\{require\("\.\.\/\.\.\/assets\/brand\/trm-mark\.png"\)\}([\s\S]*?)\/>/.exec(home);
+  assert.ok(mark, "trm-mark Image missing");
+  assert.equal(/tintColor/.test(mark![1]), false, mark![1]);
+  assert.match(home, /height:\s*22/);
+  assert.match(home, /width:\s*37/);
+  assert.equal(existsSync(resolve("assets/brand/trm-mark.png")), true);
+  assert.equal(existsSync(resolve("assets/brand/trm-mark@2x.png")), true);
+  assert.equal(existsSync(resolve("assets/brand/trm-mark@3x.png")), true);
+});
+
+test("G24 zero logo-full / logo-original refs; files gone", () => {
+  assert.equal(existsSync(resolve("assets/brand/logo-full.png")), false);
+  assert.equal(existsSync(resolve("assets/brand/logo-original.png")), false);
+  for (const file of [...walk("app"), ...walk("src")]) {
+    const text = readFileSync(file, "utf8");
+    assert.equal(/logo-full|logo-original/.test(text), false, file);
+  }
+  const readme = readFileSync(resolve("assets/README.md"), "utf8");
+  assert.equal(/logo-full|logo-original/.test(readme), false, "assets/README.md");
+});
+
+test("G25 nickname persist -> hydrate -> greeting; empty clears", async () => {
+  const {
+    formatGreeting,
+    hydrateNickname,
+    normalizeNickname,
+    persistNickname,
+    resetNicknameBackendForTests,
+    setNicknameBackendForTests,
+    memoryNicknameBackend,
+    NICKNAME_MAX,
+  } = await import("../src/home/nickname.ts");
+
+  setNicknameBackendForTests(memoryNicknameBackend);
+  try {
+    assert.equal(normalizeNickname("  KoKo\nThet  "), "KoKoThet");
+    assert.equal(normalizeNickname("x".repeat(40)).length, NICKNAME_MAX);
+
+    const stored = await persistNickname("  KoKo  ");
+    assert.equal(stored, "KoKo");
+    const hydrated = await hydrateNickname();
+    assert.equal(hydrated, "KoKo");
+    assert.equal(formatGreeting("Good morning.", hydrated), "Good morning, KoKo.");
+
+    const cleared = await persistNickname("   \n  ");
+    assert.equal(cleared, null);
+    assert.equal(await hydrateNickname(), null);
+    assert.equal(formatGreeting("Good morning.", null), "Good morning.");
+
+    const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
+    assert.match(home, /hydrateNickname/);
+    assert.match(home, /persistNickname/);
+    assert.match(home, /copy\.home\.addName/);
+    assert.equal(/AsyncStorage|react-native-mmkv|new MMKV/.test(home), false);
+  } finally {
+    resetNicknameBackendForTests();
+  }
+});

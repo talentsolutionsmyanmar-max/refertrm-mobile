@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppState, Image, Pressable, ScrollView, Text, View, type AppStateStatus } from "react-native";
+import {
+  AppState,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+  type AppStateStatus,
+} from "react-native";
 import { Link } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,6 +17,13 @@ import { isTimeoutError, isTransportError } from "../../src/api/signal";
 import { errorMessage } from "../../src/copy/error";
 import { Skeleton } from "../../src/components/ui";
 import { ArrowGlyph, ConstellationGlyph, PlayGlyph } from "../../src/home/glyphs";
+import {
+  formatGreeting,
+  hydrateNickname,
+  persistNickname,
+  setNicknameBackend,
+} from "../../src/home/nickname";
+import { fileNicknameBackend } from "../../src/storage/nicknameFile";
 import {
   bandForSeed,
   bandIndex,
@@ -31,14 +47,16 @@ import { copy } from "../../src/copy/en";
 import { color, font, radii, tap } from "../../src/theme";
 import type { JobListItem } from "../../src/api/types";
 
+// Wire nickname to the existing expo-file-system persist layer (catalogue pattern).
+setNicknameBackend(fileNicknameBackend);
+
 const HERO_VISIBLE_LOADING_MS = 5_000;
 const HERO_TIMEOUT_MS = 8_000;
 
-function greetingLine(): string {
+function greetingLine(name: string | null): string {
   const h = new Date().getHours();
-  if (h < 12) return copy.home.greetMorning;
-  if (h < 17) return copy.home.greetAfternoon;
-  return copy.home.greetEvening;
+  const base = h < 12 ? copy.home.greetMorning : h < 17 ? copy.home.greetAfternoon : copy.home.greetEvening;
+  return formatGreeting(base, name);
 }
 
 function ArrowButton({ tone = "ink" }: { tone?: "ink" | "gold" | "inverse" }) {
@@ -565,7 +583,28 @@ export default function HomeScreen() {
     void queryClient.prefetchQuery({ queryKey: ["academy"], queryFn: ({ signal }) => loadAcademy(signal) });
   }, [queryClient]);
 
-  const greet = greetingLine();
+  const [nickname, setNickname] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void hydrateNickname().then((n) => {
+      if (!cancelled) setNickname(n);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function commitNickname(raw: string) {
+    const stored = await persistNickname(raw);
+    setNickname(stored);
+    setEditingName(false);
+    setNameDraft("");
+  }
+
+  const greet = greetingLine(nickname);
   const greetParts = greet.match(/^(Good\s+)(.+)$/i);
   const greetLead = greetParts?.[1] ?? "Good ";
   const greetTail = greetParts?.[2] ?? greet;
@@ -578,11 +617,20 @@ export default function HomeScreen() {
         paddingHorizontal: 12,
         paddingBottom: 8 + insets.bottom,
       }}
+      keyboardShouldPersistTaps="handled"
     >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 26 }}>
-        <Text style={{ fontFamily: font.display, fontSize: 10.5, letterSpacing: -0.015 * 10.5, color: color.ink }}>
-          ReferTRM
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Image
+            source={require("../../assets/brand/trm-mark.png")}
+            style={{ width: 37, height: 22, borderRadius: 4 }}
+            resizeMode="contain"
+            accessibilityLabel="ReferTRM"
+          />
+          <Text style={{ fontFamily: font.display, fontSize: 10.5, letterSpacing: -0.015 * 10.5, color: color.ink }}>
+            ReferTRM
+          </Text>
+        </View>
         <View
           style={{
             paddingHorizontal: 8,
@@ -617,19 +665,55 @@ export default function HomeScreen() {
           {greetLead}
           <Text style={{ color: color.navy }}>{greetTail}</Text>
         </Text>
-        <Text
-          style={{
-            borderBottomWidth: 1,
-            borderStyle: "dashed",
-            borderBottomColor: "rgba(0,31,63,0.34)",
-            color: color.slate,
-            fontFamily: font.body,
-            fontSize: 10.5,
-            flexShrink: 0,
-          }}
-        >
-          {copy.home.addName}
-        </Text>
+        {editingName ? (
+          <TextInput
+            autoFocus
+            value={nameDraft}
+            onChangeText={setNameDraft}
+            onSubmitEditing={() => void commitNickname(nameDraft)}
+            onBlur={() => void commitNickname(nameDraft)}
+            maxLength={24}
+            placeholder={copy.home.addName}
+            placeholderTextColor={color.slate}
+            accessibilityLabel={copy.home.addName}
+            style={{
+              borderBottomWidth: 1,
+              borderStyle: "dashed",
+              borderBottomColor: "rgba(0,31,63,0.34)",
+              color: color.ink,
+              fontFamily: font.body,
+              fontSize: 10.5,
+              flexShrink: 0,
+              minWidth: 88,
+              paddingVertical: 0,
+              margin: 0,
+            }}
+          />
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={nickname ?? copy.home.addName}
+            onPress={() => {
+              setNameDraft(nickname ?? "");
+              setEditingName(true);
+            }}
+            hitSlop={8}
+          >
+            <Text
+              style={{
+                borderBottomWidth: 1,
+                borderStyle: "dashed",
+                borderBottomColor: "rgba(0,31,63,0.34)",
+                color: color.slate,
+                fontFamily: font.body,
+                fontSize: 10.5,
+                flexShrink: 0,
+              }}
+            >
+              {nickname ?? copy.home.addName}
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       <View style={{ marginTop: 9, gap: 7 }}>
