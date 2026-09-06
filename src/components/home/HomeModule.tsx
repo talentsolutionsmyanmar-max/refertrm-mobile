@@ -9,12 +9,48 @@ import { color, tap, type } from "../../theme";
  */
 export type HomeWeight = "hero" | "standard" | "quiet";
 
+/**
+ * S6 — a teal icon tile differentiates a card without emoji or an icon font.
+ * The dependency lock forbids react-native-svg and @expo/vector-icons is
+ * banned on the launch path, so the mark is typographic: a teal tile carrying
+ * a two-letter monogram, palette-legal and distinct per card. If a real
+ * SVG/PNG asset is later supplied per card, this prop's union is the seam it
+ * lands in.
+ */
+export type HomeTile = "book" | "sprout";
+
+const TILE_MARK: Record<HomeTile, string> = {
+  book: "BK",
+  sprout: "SP",
+};
+
+function Tile({ kind }: { kind: HomeTile }) {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: 10,
+        backgroundColor: color.teal,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 10,
+      }}
+    >
+      <Text style={{ color: color.white, ...type.monoLabel, fontWeight: "800", letterSpacing: 1 }}>{TILE_MARK[kind]}</Text>
+    </View>
+  );
+}
+
 export function HomeModule({
   eyebrow,
   title,
   detail,
   weight = "standard",
   fill = false,
+  tile,
   children,
 }: {
   eyebrow: string;
@@ -22,6 +58,8 @@ export function HomeModule({
   detail?: string;
   weight?: HomeWeight;
   fill?: boolean;
+  /** S6 — optional teal icon tile rendered above the eyebrow. */
+  tile?: HomeTile;
   /** @deprecated R2 — accepted for backward compatibility, ignored. Weight is carried by the weight prop. */
   accent?: "navy" | "gold" | "teal";
   children?: React.ReactNode;
@@ -39,6 +77,7 @@ export function HomeModule({
         flex: fill ? 1 : undefined,
       }}
     >
+      {tile ? <Tile kind={tile} /> : null}
       <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{eyebrow}</Text>
       <Text style={{ color: color.navy, ...titleStyle, fontWeight: "700", marginTop: 6 }}>{title}</Text>
       {detail ? <Text style={{ color: color.muted, ...detailStyle, marginTop: 5 }}>{detail}</Text> : null}

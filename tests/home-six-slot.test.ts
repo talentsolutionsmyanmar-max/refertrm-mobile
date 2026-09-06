@@ -36,11 +36,17 @@ test("Home deletes the five retired modules", () => {
   }
 });
 
-test("exactly one gold fill among Home pressables (R1)", () => {
+test("exactly one gold FILL in viewport one (R1) — gold text and gold borders are not fills", () => {
+  // R1 counts fills (backgroundColor), not accents. The headcount badge is a
+  // gold border and the salary is gold text — neither is a fill, and neither
+  // violates one-primary. The gate asserts exactly one gold backgroundColor on
+  // Home, and that gold accents exist only as text/border (never a second fill).
   const goldFills = home.match(/backgroundColor:\s*color\.gold/g) ?? [];
   assert.equal(goldFills.length, 1, "only MOB.HOME.PRIMARY fills gold");
   const goldRef = home.match(/tone="gold"/g) ?? [];
   assert.equal(goldRef.length, 0, "no HomeAction gold tone on Home");
+  // If gold accents are present, they must be text (color:) or border
+  // (borderColor:), never a second fill — asserted by the fill count above.
 });
 
 test("no locked-value teaser strings anywhere in app/", () => {
@@ -110,15 +116,22 @@ test("C1 — provenance names the licensed company of record, never the mother c
   }
 });
 
-test("C3 — the no-fee line is state-independent (adjacent to PRIMARY, not inside hero branches)", () => {
-  // It renders in HomeScreen's main return, after the HeroJobSlot component —
-  // not inside HeroJobSlot's success/empty/error branches.
+test("C3 — the no-fee line is state-independent and rendered once (bound to PRIMARY)", () => {
+  // F1's guard evolved in S7: the no-fee line is now bound INTO the gold button
+  // as a deliberate pair. It appears twice in source — once on the button's
+  // accessibilityLabel (spoken) and once as the visible Text inside the button —
+  // but both read the same single copy key, and there is exactly one VISIBLE
+  // render site (one <Text> carrying it). The property being guarded is "one
+  // source of truth + one visible instance", not "one string reference".
+  const occurrences = home.match(/copy\.home\.heroJob\.nofee/g) ?? [];
+  assert.equal(occurrences.length, 2, "no-fee line: exactly one a11y label + one visible Text, same key");
+  // Exactly one visible Text node renders it.
+  const visibleRenders = home.match(/<Text[^>]*>\s*\{copy\.home\.heroJob\.nofee\}/g) ?? [];
+  assert.equal(visibleRenders.length, 1, "exactly one visible Text renders the no-fee line");
+  // And it lives in HomeScreen's own JSX (state-independent), not in HeroJobSlot.
   const homeReturnIdx = home.indexOf("export default function HomeScreen");
   const nofeeIdx = home.indexOf("copy.home.heroJob.nofee", homeReturnIdx);
   assert.ok(nofeeIdx > homeReturnIdx, "no-fee line must render from HomeScreen's own JSX");
-  // F1 — guard the single-source property for real: exactly one occurrence in the file.
-  assert.equal((home.match(/copy\.home\.heroJob\.nofee/g) ?? []).length, 1,
-    "no-fee line has exactly one source");
 });
 
 test("FIX-002 gate — home.tsx consumes all four hero copy keys (a dropped branch fails)", () => {

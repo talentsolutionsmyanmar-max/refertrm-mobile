@@ -110,6 +110,12 @@ export const copy = {
       slow: "Still loading — it's taking longer than usual. Browse all jobs below while it finishes.",
       offline: "Waiting for a connection. Your saved roles are in Jobs.",
       retry: "Try again",
+      pulse: (roles: number) => {
+        const h = new Date().getHours();
+        const part = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
+        return `${part} · ${roles} roles open right now`;
+      },
+      pulseFallback: "Roles are open right now",
     },
     primary: {
       label: "See all jobs",

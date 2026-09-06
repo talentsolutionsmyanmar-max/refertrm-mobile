@@ -44,6 +44,14 @@ function HeroJobSlot() {
   const query = useQuery({ queryKey: ["hero-job"], queryFn: ({ signal }) => loadHeroJob(signal) });
   const job = query.data?.job ?? null;
 
+  // S4 — extract the headcount from the polluted API title. Verified against the
+  // live feed: 13/214 titles carry an em-dash, all 13 are exactly
+  // "— Hiring N positions", zero multi-em-dash collisions. Strict regex; anything
+  // else falls through to the raw title with no badge.
+  const titleMatch = job ? /^(.*?)\s*—\s*Hiring\s+(\d+)\s+positions?\s*$/i.exec(job.title) : null;
+  const heroTitle = titleMatch ? titleMatch[1].trim() : job?.title;
+  const headcount = titleMatch ? `${titleMatch[2]} positions`.toUpperCase() : null;
+
   // G2a — cap the visible skeleton at 5s (HERO_VISIBLE_LOADING_MS); the fetch
   // runs to 8s (HERO_TIMEOUT_MS), so the role can still land during SLOW.
   const [loadingBudgetSpent, setLoadingBudgetSpent] = useState(false);
@@ -212,15 +220,36 @@ function HeroJobSlot() {
     <Link href="/jobs" asChild>
       <Pressable
         accessibilityRole="link"
-        accessibilityLabel={`${job.title}, ${job.location || copy.jobs.locationUnknown}. ${copy.home.primary.label}.`}
-        style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+        accessibilityLabel={`${heroTitle}, ${job.location || copy.jobs.locationUnknown}. ${copy.home.primary.label}.`}
+        style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}
       >
-        <View style={{ borderWidth: 1, borderColor: color.line, borderRadius: 12, backgroundColor: color.cream, padding: 16 }}>
-          <Text style={{ color: color.muted, ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
-          <Text style={{ color: color.navy, ...type.hero, fontWeight: "700", marginTop: 6 }}>{job.title}</Text>
-          <Text style={{ color: color.muted, ...type.body, marginTop: 5 }}>
+        {/* S2 — the hero is the most valuable rectangle on the screen: navy, no hairline. */}
+        <View style={{ borderRadius: 12, backgroundColor: color.navy, padding: 16 }}>
+          <Text style={{ color: "rgba(255,255,255,0.6)", ...type.monoLabel, fontWeight: "700" }}>{copy.home.heroJob.label}</Text>
+          {/* S1 — the role title carries the display ceiling. */}
+          <Text style={{ color: color.white, ...type.display, fontWeight: "800", marginTop: 8 }}>{heroTitle}</Text>
+          {headcount ? (
+            /* S4 — the headcount is a selling point, extracted from the polluted API title. */
+            <View
+              style={{
+                alignSelf: "flex-start",
+                marginTop: 10,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 6,
+                borderWidth: 1,
+                borderColor: color.gold,
+              }}
+            >
+              <Text style={{ color: color.gold, ...type.monoLabel, fontWeight: "700" }}>{headcount}</Text>
+            </View>
+          ) : null}
+          <Text style={{ color: "rgba(255,255,255,0.75)", ...type.body, marginTop: 10 }}>
             {job.location || copy.jobs.locationUnknown}
-            {job.salaryDisplay ? ` · ${job.salaryDisplay}` : ` · ${copy.home.heroJob.salaryHidden}`}
+          </Text>
+          {/* S3 — the salary is the motivating factor; it reads as one. */}
+          <Text style={{ color: color.gold, ...type.monoLabel, fontWeight: "700", marginTop: 4 }}>
+            {job.salaryDisplay || copy.home.heroJob.salaryHidden}
           </Text>
         </View>
       </Pressable>
@@ -228,8 +257,23 @@ function HeroJobSlot() {
   );
 }
 
-function BrowserDoorRow({ label, url }: { label: string; url: string }) {
+/** S5 — one line above the hero: time-of-day address + live count. No name, no auth. */
+function PulseLine() {
+  const query = useQuery({ queryKey: ["jobs"], queryFn: ({ signal }) => loadJobs(signal) });
+  const roles = query.data?.jobs.length;
+  const text =
+    typeof roles === "number" && roles > 0 ? copy.home.heroJob.pulse(roles) : copy.home.heroJob.pulseFallback;
   return (
+    <Text
+      accessibilityLiveRegion="polite"
+      style={{ color: color.muted, ...type.bodySm, fontWeight: "600", paddingHorizontal: 2 }}
+    >
+      {text}
+    </Text>
+  );
+}
+
+function BrowserDoorRow({ label, url }: { label: string; url: string }) {  return (
     <Pressable
       accessibilityRole="link"
       accessibilityLabel={`${label}. ${copy.home.browserDoors.opensInBrowser}.`}
@@ -270,17 +314,21 @@ export default function HomeScreen() {
         gap: space[4],
       }}
     >
+      {/* S5 — the screen gets a pulse: time-of-day address + live count.
+          Guest surface, no name, no auth. Sits above the hero. */}
+      <PulseLine />
+
       {/* 1 — MOB.HOME.HERO_JOB (hero): one real role, in-app */}
       <HeroJobSlot />
 
       {/* 2 — MOB.HOME.PRIMARY: the only gold fill in viewport one (R1).
-          The no-fee line sits adjacent and state-independent (MUST-9):
-          it renders on cold start, empty, and fetch failure alike. */}
+          The no-fee line is bound to the button as a deliberate pair (S7) —
+          it renders state-independent (MUST-9): cold start, empty, failure alike. */}
       <View style={{ gap: space[2] }}>
         <Link href="/jobs" asChild>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={copy.home.primary.label}
+            accessibilityLabel={`${copy.home.primary.label}. ${copy.home.heroJob.nofee}`}
             style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
           >
             {/* G1 — the box lives on the inner View, never on the asChild Pressable.
@@ -294,15 +342,17 @@ export default function HomeScreen() {
                 alignItems: "center",
                 justifyContent: "center",
                 paddingHorizontal: 16,
+                paddingVertical: 10,
               }}
             >
               <Text style={{ color: color.navy, ...type.standard, fontWeight: "800" }}>{copy.home.primary.label}</Text>
+              {/* S7 — the no-fee line is part of the button, not a floating caption. */}
+              <Text style={{ color: "rgba(0,31,63,0.7)", ...type.monoLabel, fontWeight: "700", marginTop: 3 }}>
+                {copy.home.heroJob.nofee}
+              </Text>
             </View>
           </Pressable>
         </Link>
-        <Text style={{ color: color.tealDark, ...type.bodySm, fontWeight: "600", textAlign: "center" }}>
-          {copy.home.heroJob.nofee}
-        </Text>
       </View>
 
       {/* 3 — MOB.HOME.LEARN (standard): in-app */}
@@ -312,11 +362,13 @@ export default function HomeScreen() {
           accessibilityLabel={copy.home.learn.title}
           style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
         >
+          {/* S6 — teal tile differentiates the card at a glance (typographic mark, no emoji, no icon font). */}
           <HomeModule
             weight="standard"
             eyebrow={copy.home.learn.eyebrow}
             title={copy.home.learn.title}
             detail={copy.home.learn.detail}
+            tile="book"
           />
         </Pressable>
       </Link>
@@ -330,11 +382,13 @@ export default function HomeScreen() {
         }}
         style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
       >
+        {/* S6 — the sprout tile echoes the YDC zone header's own marker. */}
         <HomeModule
           weight="standard"
           eyebrow={copy.home.ydc.eyebrow}
           title={copy.home.ydc.title}
           detail={copy.home.ydc.detail}
+          tile="sprout"
         />
       </Pressable>
 
