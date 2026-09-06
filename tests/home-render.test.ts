@@ -154,6 +154,15 @@ test("YDC glyph is a raster Image, not an empty spacer", () => {
   assert.equal(readFileSync(resolve("assets/home/ydc-glyph@3x.png")).length > 100, true);
 });
 
+test("G12 academy copy block has zero occurrences of courses", () => {
+  const en = readFileSync(resolve("src/copy/en.ts"), "utf8");
+  const match = /academy:\s*\{([\s\S]*?)\n  \},\n\n  offline:/.exec(en);
+  assert.ok(match, "academy block not found");
+  assert.equal(/courses/i.test(match![1]), false, match![1]);
+  assert.match(match![1], /count:\s*\(n:\s*number\)\s*=>\s*`\$\{n\} lessons`/);
+  assert.match(match![1], /search:\s*"Search lessons"/);
+});
+
 test("G11 Learn caption is interpolated count + lessons; 193 absent", () => {
   const home = readFileSync(resolve("app/(tabs)/home.tsx"), "utf8");
   const en = readFileSync(resolve("src/copy/en.ts"), "utf8");

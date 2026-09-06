@@ -56,12 +56,12 @@ export const copy = {
 
   academy: {
     title: "Academy",
-    empty: "No published courses match your search.",
-    emptyOffline: "No saved courses yet. Connect once to download the catalogue.",
+    empty: "No lessons match your search.",
+    emptyOffline: "No saved lessons yet. Connect once to download the catalogue.",
     minutes: (n: number) => `${n} min`,
     xp: (n: number) => `${n} XP`,
-    count: (n: number) => `${n} published courses`,
-    search: "Search courses",
+    count: (n: number) => `${n} lessons`,
+    search: "Search lessons",
     bodyOffline: "This lesson needs a connection the first time.",
     languageEn: "English",
     languageMm: "Myanmar",
