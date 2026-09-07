@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { filterJobs, type JobPlace } from "../../src/api/filter";
 import { loadJobs } from "../../src/api/load";
+import { cataloguePresentation } from "../../src/api/catalogue-presentation";
 import { jobTypeLabel } from "../../src/api/project";
 import { Banner, Chip, RetryState } from "../../src/components/ui";
 import { errorMessage } from "../../src/copy/error";
@@ -26,13 +27,21 @@ export default function JobsScreen() {
   const [place, setPlace] = useState<JobPlace>("all");
   const jobs = query.data?.jobs ?? [];
   const visible = useMemo(() => filterJobs(jobs, search, place), [jobs, search, place]);
-  const stale = Boolean(query.data?.fromCache) || !online;
+  const presentation = cataloguePresentation({
+    count: jobs.length,
+    hasData: query.data !== undefined,
+    fromCache: Boolean(query.data?.fromCache),
+    isError: query.isError,
+    online,
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>
-      {stale && jobs.length > 0 ? <Banner text={online ? copy.offline.stale : copy.offline.banner} /> : null}
+      {presentation.stale && jobs.length > 0 ? <Banner text={online ? copy.offline.stale : copy.offline.banner} /> : null}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ color: color.muted, marginBottom: 8 }}>{copy.jobs.count(jobs.length)}</Text>
+        {presentation.showCount ? (
+          <Text style={{ color: color.muted, marginBottom: 8 }}>{copy.jobs.count(jobs.length)}</Text>
+        ) : null}
         <TextInput
           value={search}
           onChangeText={setSearch}
@@ -69,7 +78,7 @@ export default function JobsScreen() {
           contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
           ListEmptyComponent={
             <Text style={{ color: color.muted, paddingVertical: 16 }}>
-              {jobs.length === 0 ? copy.jobs.emptyOffline : copy.jobs.empty}
+              {presentation.emptyOffline ? copy.jobs.emptyOffline : copy.jobs.empty}
             </Text>
           }
           renderItem={({ item }) => (
