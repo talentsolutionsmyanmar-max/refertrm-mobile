@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { filterModules, uniqueCategories } from "../../src/api/filter";
 import { loadAcademy } from "../../src/api/load";
+import { cataloguePresentation } from "../../src/api/catalogue-presentation";
 import { Banner, Chip, RetryState } from "../../src/components/ui";
 import { errorMessage } from "../../src/copy/error";
 import { copy } from "../../src/copy/en";
@@ -23,15 +24,23 @@ export default function AcademyScreen() {
     () => filterModules(modules, search, category, mmOnly),
     [modules, search, category, mmOnly],
   );
-  const stale = Boolean(query.data?.fromCache) || !online;
+  const presentation = cataloguePresentation({
+    count: modules.length,
+    hasData: query.data !== undefined,
+    fromCache: Boolean(query.data?.fromCache),
+    isError: query.isError,
+    online,
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>
-      {stale && modules.length > 0 ? (
+      {presentation.stale && modules.length > 0 ? (
         <Banner text={online ? copy.offline.stale : copy.offline.banner} />
       ) : null}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ color: color.muted, marginBottom: 8 }}>{copy.academy.count(modules.length)}</Text>
+        {presentation.showCount ? (
+          <Text style={{ color: color.muted, marginBottom: 8 }}>{copy.academy.count(modules.length)}</Text>
+        ) : null}
         <TextInput
           value={search}
           onChangeText={setSearch}
@@ -90,7 +99,7 @@ export default function AcademyScreen() {
           contentContainerStyle={{ padding: 16, paddingTop: 4, gap: 12, paddingBottom: 32 }}
           ListEmptyComponent={
             <Text style={{ color: color.muted, paddingVertical: 16 }}>
-              {modules.length === 0 ? copy.academy.emptyOffline : copy.academy.empty}
+              {presentation.emptyOffline ? copy.academy.emptyOffline : copy.academy.empty}
             </Text>
           }
           renderItem={({ item }) => (
