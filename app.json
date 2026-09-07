@@ -21,12 +21,18 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2A3764"
       },
-      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": true,
-          "category": ["BROWSABLE", "DEFAULT"],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
           "data": [
             {
               "scheme": "https",
@@ -42,7 +48,22 @@
         }
       ]
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/BricolageGrotesque-600.ttf",
+            "./assets/fonts/Inter-400.ttf",
+            "./assets/fonts/Inter-600.ttf",
+            "./assets/fonts/JetBrainsMono-600.ttf",
+            "./assets/fonts/Padauk-400.ttf",
+            "./assets/fonts/Padauk-700.ttf"
+          ]
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },

@@ -6,6 +6,7 @@ export const MAYA_URL = "https://www.refertrm.com/eq/maya";
 export const TRINITY_URL = "https://www.refertrm.com/eq/trinity";
 export const REFERRALS_URL = "https://www.refertrm.com/eq/referrals";
 export const SETTINGS_URL = "https://www.refertrm.com/eq/settings";
+export const CV_URL = "https://www.refertrm.com/eq/cv-builder";
 export const LOGIN_TRINITY = "https://www.refertrm.com/login?redirectTo=%2Feq%2Ftrinity";
 export const LOGIN_GAME = "https://www.refertrm.com/login?redirectTo=%2Feq%2Fgame";
 

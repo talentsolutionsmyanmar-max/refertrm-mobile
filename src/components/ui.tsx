@@ -58,7 +58,7 @@ export function CardText({ text, mm }: { text: string; mm?: boolean }) {
         color: color.navy,
         fontSize: 16,
         lineHeight: mm ? 32 : 26,
-        fontFamily: mm ? "Padauk" : undefined,
+        fontFamily: mm ? "Padauk-400" : undefined,
       }}
     >
       {text}
@@ -137,6 +137,20 @@ export function Loading() {
       <ActivityIndicator color={color.teal} />
       <Text style={{ color: color.muted, marginTop: 12 }}>{copy.errors.loading}</Text>
     </View>
+  );
+}
+
+/** Neutral skeleton bar — no ActivityIndicator on Home hero. */
+export function Skeleton({ width = "100%", height = 12 }: { width?: number | `${number}%`; height?: number }) {
+  return (
+    <View
+      style={{
+        width,
+        height,
+        borderRadius: 4,
+        backgroundColor: "rgba(0,31,63,0.13)",
+      }}
+    />
   );
 }
 
