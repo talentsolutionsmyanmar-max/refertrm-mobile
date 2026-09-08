@@ -5,6 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { loadAcademy, loadModule } from "../../src/api/load";
 import { parseLessonBlocks, parseQuiz, showMmToggle } from "../../src/api/lesson";
 import { copy } from "../../src/copy/en";
+import { font } from "../../src/theme";
+
+/** Myanmar lesson content line geometry (~1.8). EN path keeps prior literals. */
+const MM_LH = 1.8;
 
 export default function LessonScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -52,7 +56,21 @@ export default function LessonScreen() {
       <Text style={{ color: "#0D9488", fontSize: 12, fontWeight: "600", marginTop: 8 }}>
         {(module?.category ?? listed?.category ?? "").toUpperCase()}
       </Text>
-      <Text style={{ color: "#001F3F", fontSize: 24, fontWeight: "800", marginTop: 4 }}>{title}</Text>
+      <Text
+        style={
+          mm
+            ? {
+                color: "#001F3F",
+                fontSize: 24,
+                fontFamily: font.myanmarBold,
+                lineHeight: Math.round(24 * MM_LH),
+                marginTop: 4,
+              }
+            : { color: "#001F3F", fontSize: 24, fontWeight: "800", marginTop: 4 }
+        }
+      >
+        {title}
+      </Text>
       {canToggle ? (
         <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
           <Pressable
@@ -88,10 +106,37 @@ export default function LessonScreen() {
       {blocks.map((block, i) => (
         <View key={`${block.type}-${i}`} style={{ marginTop: 20 }}>
           {block.title ? (
-            <Text style={{ color: "#001F3F", fontWeight: "700", fontSize: 16 }}>{block.title}</Text>
+            <Text
+              style={
+                mm
+                  ? {
+                      color: "#001F3F",
+                      fontSize: 16,
+                      fontFamily: font.myanmarBold,
+                      lineHeight: Math.round(16 * MM_LH),
+                    }
+                  : { color: "#001F3F", fontWeight: "700", fontSize: 16 }
+              }
+            >
+              {block.title}
+            </Text>
           ) : null}
           {block.content ? (
-            <Text style={{ color: "#001F3F", marginTop: 8, lineHeight: 22 }}>{block.content}</Text>
+            <Text
+              style={
+                mm
+                  ? {
+                      color: "#001F3F",
+                      marginTop: 8,
+                      fontSize: 16,
+                      fontFamily: font.myanmar,
+                      lineHeight: Math.round(16 * MM_LH),
+                    }
+                  : { color: "#001F3F", marginTop: 8, lineHeight: 22 }
+              }
+            >
+              {block.content}
+            </Text>
           ) : null}
         </View>
       ))}
