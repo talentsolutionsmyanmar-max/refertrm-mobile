@@ -2,10 +2,17 @@ import { useEffect, useState } from "react";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Linking from "expo-linking";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import NetInfo from "@react-native-community/netinfo";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { parseDeepLink } from "../src/linking/paths";
 import { isHttpsStartUrl, openStartInBrowser } from "../src/linking/start";
 import { copy } from "../src/copy/en";
+
+onlineManager.setEventListener((setOnline) =>
+  NetInfo.addEventListener((state) => {
+    setOnline(state.isConnected !== false && state.isInternetReachable !== false);
+  }),
+);
 
 export default function RootLayout() {
   const router = useRouter();
@@ -18,6 +25,7 @@ export default function RootLayout() {
             retry: false,
             refetchOnReconnect: true,
             refetchOnWindowFocus: false,
+            networkMode: "online",
           },
         },
       }),

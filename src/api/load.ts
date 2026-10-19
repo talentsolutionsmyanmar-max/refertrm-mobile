@@ -170,7 +170,12 @@ export async function loadAcademy(signal?: AbortSignal): Promise<AcademyLoad> {
   }
 }
 
-export async function loadModule(id: string, signal?: AbortSignal): Promise<AcademyModuleDetail> {
+export type ModuleDetailLoad = {
+  module: AcademyModuleDetail;
+  fromCache: boolean;
+};
+
+export async function loadModule(id: string, signal?: AbortSignal): Promise<ModuleDetailLoad> {
   const ticket = moduleGeneration.issue(id);
   const cached = catalog.findModuleBody(id);
   try {
@@ -182,14 +187,14 @@ export async function loadModule(id: string, signal?: AbortSignal): Promise<Acad
     throwIfAborted(signal);
     if (!moduleGeneration.apply(id, ticket)) {
       const latest = catalog.findModuleBody(id) ?? catalog.findModuleBody(module.id);
-      if (latest && isReadableModule(latest)) return latest;
-      return module;
+      if (latest && isReadableModule(latest)) return { module: latest, fromCache: true };
+      return { module, fromCache: false };
     }
     catalog.writeModule(module);
-    return module;
+    return { module, fromCache: false };
   } catch (error) {
     if (isAbortError(error)) throw error;
-    if (cached && isReadableModule(cached)) return cached;
+    if (cached && isReadableModule(cached)) return { module: cached, fromCache: true };
     throw error;
   }
 }
