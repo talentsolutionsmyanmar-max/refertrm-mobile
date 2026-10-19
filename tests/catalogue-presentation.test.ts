@@ -16,12 +16,18 @@ test("counts distinguish successful empty data from absent or failed data", () =
 });
 
 test("usable data survives a failed refresh but is explicitly stale", () => {
-  for (const changed of [{ fromCache: true }, { isError: true }, { online: false }]) {
+  for (const changed of [{ fromCache: true }, { online: false }]) {
     const result = cataloguePresentation({ ...fresh, ...changed });
     assert.equal(result.showCount, true);
     assert.equal(result.stale, true);
   }
   assert.equal(cataloguePresentation(fresh).stale, false);
+});
+
+test("failed background refetch does not mark the last live catalogue sync as stale", () => {
+  const result = cataloguePresentation({ ...fresh, isError: true, fromCache: false });
+  assert.equal(result.stale, false);
+  assert.equal(result.showCount, true);
 });
 
 test("a live empty catalogue is not an offline message; filtered usable data stays search-empty", () => {

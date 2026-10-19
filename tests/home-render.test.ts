@@ -17,7 +17,7 @@ import {
 import type { JobListItem } from "../src/api/types.ts";
 
 const PROVENANCE =
-  "Platform: ReferTRM · company of record: Talent Resources Myanmar Co., Ltd. · Licence No. 211/2024";
+  "Platform: ReferTRM · company of record: Talent Resources Myanmar Co., Ltd. · Licence No. 211/2026 (originally 211/2024, renewed annually)";
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir, { withFileTypes: true })) {

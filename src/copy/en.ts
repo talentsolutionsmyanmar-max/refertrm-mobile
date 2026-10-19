@@ -101,7 +101,6 @@ export const copy = {
 
   home: {
     fig: "Fig 01 / Today",
-    employers: "Employers",
     addName: "Add your name",
     greetMorning: "Good morning.",
     greetAfternoon: "Good afternoon.",
@@ -127,6 +126,7 @@ export const copy = {
     mayaTitle: "An advisor, not an answer.",
     trinityLabel: "06 / TRINITY",
     trinityTitle: "How you decide.",
+    trinityFootnote: "Free / Premium / Pro labels only — plans and billing on ReferTRM.com, not in this app.",
     trinityFree: "Free",
     trinityPremium: "Premium",
     trinityPro: "Pro",
@@ -135,7 +135,7 @@ export const copy = {
     referLabel: "08 / REFERRALS",
     referTitle: "Share a role you trust.",
     provenance:
-      "Platform: ReferTRM · company of record: Talent Resources Myanmar Co., Ltd. · Licence No. 211/2024",
+      "Platform: ReferTRM · company of record: Talent Resources Myanmar Co., Ltd. · Licence No. 211/2026 (originally 211/2024, renewed annually)",
     heroJob: {
       label: "01 / A REAL ROLE, RIGHT NOW",
       empty: "No public roles are listed right now.",

@@ -4,6 +4,15 @@ import { getKv, memoryKv, type KeyValue } from "./kv";
 const CATALOG_KEY = "refertrm.p1.catalog.v1";
 const cache = new Map<string, string>();
 
+function isCatalogJson(raw: string): boolean {
+  try {
+    JSON.parse(raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function fileUri(): string | null {
   const dir = FileSystem.documentDirectory;
   return dir ? `${dir}refertrm.p1.catalog.v1.json` : null;
@@ -16,13 +25,13 @@ async function readFile(): Promise<string | undefined> {
     const info = await FileSystem.getInfoAsync(uri);
     if (info.exists) {
       const raw = await FileSystem.readAsStringAsync(uri);
-      return raw || undefined;
+      if (raw && isCatalogJson(raw)) return raw;
     }
     const tmp = `${uri}.tmp`;
     const tmpInfo = await FileSystem.getInfoAsync(tmp);
     if (tmpInfo.exists) {
       const raw = await FileSystem.readAsStringAsync(tmp);
-      return raw || undefined;
+      if (raw && isCatalogJson(raw)) return raw;
     }
     return undefined;
   } catch {
@@ -53,6 +62,7 @@ async function removeFile(): Promise<void> {
   if (!uri) return;
   try {
     await FileSystem.deleteAsync(uri, { idempotent: true });
+    await FileSystem.deleteAsync(`${uri}.tmp`, { idempotent: true });
   } catch {
     /* persist is best-effort */
   }
@@ -121,6 +131,11 @@ export function resetCatalogPersistForTests(): void {
   if (persistTimer !== undefined) clearTimeout(persistTimer);
   persistTimer = undefined;
   persistChain = Promise.resolve();
+}
+
+/** Deletes on-disk catalogue bytes (main + .tmp). Used by tests and explicit eviction paths. */
+export async function deletePersistedCatalogFiles(): Promise<void> {
+  await removeFile();
 }
 
 export async function persistCatalogToFile(): Promise<void> {

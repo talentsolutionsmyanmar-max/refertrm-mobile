@@ -396,9 +396,11 @@ for (const lane of lanes) {
 
 test("flushScheduledCatalogPersist writes nothing when no persist timer is pending", async () => {
   reset();
+  catalog.writeJobs(parseJobsEnvelope({ jobs: [job("memory-only-job")] }));
+  assert.ok(getKv().getString(CACHE_KEY), "seed catalogue in memory without scheduling disk persist");
   assert.equal(files.has(FILE_URI), false);
   await flushScheduledCatalogPersist();
-  assert.equal(files.has(FILE_URI), false);
+  assert.equal(files.has(FILE_URI), false, "flush must not write disk without a scheduled timer");
 });
 
 test("offline cold process hydrates job and lesson bodies after online loaders persisted them", async () => {

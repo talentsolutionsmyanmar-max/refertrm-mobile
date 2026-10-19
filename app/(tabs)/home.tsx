@@ -619,32 +619,24 @@ export default function HomeScreen() {
       }}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 26 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Image
-            source={require("../../assets/brand/trm-mark.png")}
-            style={{ width: 37, height: 22, borderRadius: 4 }}
-            resizeMode="contain"
-            accessibilityLabel="ReferTRM"
-          />
-          <Text style={{ fontFamily: font.display, fontSize: 10.5, letterSpacing: -0.015 * 10.5, color: color.ink }}>
-            ReferTRM
-          </Text>
-        </View>
-        <View
+      <View style={{ flexDirection: "row", alignItems: "center", minHeight: 26 }}>
+        <Image
+          source={require("../../assets/brand/trm-mark.png")}
+          style={{ width: 37, height: 22, borderRadius: 4 }}
+          resizeMode="contain"
+          accessibilityLabel="ReferTRM"
+        />
+        <Text
           style={{
-            paddingHorizontal: 8,
-            minHeight: 22,
-            borderWidth: 1,
-            borderColor: color.line,
-            borderRadius: radii.pill,
-            justifyContent: "center",
+            marginLeft: 6,
+            fontFamily: font.display,
+            fontSize: 10.5,
+            letterSpacing: -0.015 * 10.5,
+            color: color.ink,
           }}
         >
-          <Text style={{ fontFamily: font.mono, fontSize: 8, letterSpacing: 0.05 * 8, color: color.ink }}>
-            {copy.home.employers}
-          </Text>
-        </View>
+          ReferTRM
+        </Text>
       </View>
 
       <Text
@@ -1108,6 +1100,18 @@ export default function HomeScreen() {
                 </Text>
               ))}
             </View>
+            <Text
+              style={{
+                marginTop: 4,
+                fontFamily: font.body,
+                fontSize: 7,
+                lineHeight: 10,
+                color: color.slate,
+                zIndex: 1,
+              }}
+            >
+              {copy.home.trinityFootnote}
+            </Text>
           </DoorCard>
         </View>
 
