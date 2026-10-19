@@ -25,7 +25,7 @@ export default function RootLayout() {
             retry: false,
             refetchOnReconnect: true,
             refetchOnWindowFocus: false,
-            networkMode: "online",
+            networkMode: "offlineFirst",
           },
         },
       }),

@@ -68,4 +68,5 @@ test("root layout connects NetInfo to React Query onlineManager", () => {
   const layout = readFileSync(new URL("../app/_layout.tsx", import.meta.url), "utf8");
   assert.match(layout, /onlineManager\.setEventListener/);
   assert.match(layout, /@react-native-community\/netinfo/);
+  assert.match(layout, /networkMode:\s*"offlineFirst"/);
 });

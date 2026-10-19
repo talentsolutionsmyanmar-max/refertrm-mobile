@@ -110,6 +110,7 @@ export async function loadJobs(signal?: AbortSignal): Promise<JobsLoad> {
 }
 
 export async function loadJob(id: string, signal?: AbortSignal): Promise<JobDetailLoad> {
+  await hydrateCatalogFromFile();
   const ticket = jobDetailGeneration.issue(id);
   const ordinal = jobCanonicalCommit.issue();
   const cachedBody = catalog.findJobBody(id);
@@ -176,6 +177,7 @@ export type ModuleDetailLoad = {
 };
 
 export async function loadModule(id: string, signal?: AbortSignal): Promise<ModuleDetailLoad> {
+  await hydrateCatalogFromFile();
   const ticket = moduleGeneration.issue(id);
   const cached = catalog.findModuleBody(id);
   try {

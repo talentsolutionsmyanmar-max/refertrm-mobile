@@ -7,7 +7,7 @@
     "start": "expo start --android",
     "android": "expo start --android",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts tests/*.test.mjs && bun test ./tests/catalogue-truth.bun.ts"
+    "test": "node --experimental-test-module-mocks --import tsx --test tests/*.test.ts tests/*.test.mjs"
   },
   "dependencies": {
     "@react-native-community/netinfo": "11.4.1",
@@ -28,7 +28,6 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
-    "bun": "^1.2.5",
     "tsx": "^4.19.4",
     "typescript": "~5.8.3"
   }
