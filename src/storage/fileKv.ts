@@ -28,6 +28,12 @@ async function writeFile(value: string): Promise<void> {
   const tmp = `${uri}.tmp`;
   try {
     await FileSystem.writeAsStringAsync(tmp, value);
+    // iOS moveAsync does not replace an existing destination; delete first. There is a
+    // brief window where the catalogue file is missing — concurrent hydrate may see empty.
+    const dest = await FileSystem.getInfoAsync(uri);
+    if (dest.exists) {
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+    }
     await FileSystem.moveAsync({ from: tmp, to: uri });
   } catch {
     try {
@@ -97,7 +103,7 @@ export function schedulePersistCatalogToFile(): void {
   }, 25);
 }
 
-/** Test helper: run a pending debounced flush only — never writes memory that was never scheduled. */
+/** Run a pending debounced flush (app background + tests). Never writes unless a timer was scheduled. */
 export async function flushScheduledCatalogPersist(): Promise<void> {
   if (persistTimer !== undefined) {
     clearTimeout(persistTimer);

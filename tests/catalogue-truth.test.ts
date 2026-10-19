@@ -370,13 +370,21 @@ test("offline cold process hydrates job and lesson bodies after online loaders p
   assert.equal(listed.fromCache, false);
   assert.deepEqual(listed.jobs.map((row) => row.id), [jobId]);
 
-  const liveJob = await loadJob(jobId);
-  assert.equal(liveJob.fromCache, false);
-  assert.equal(liveJob.job.description, "Persisted job description for cold offline QA.");
-
   const listedAcademy = await loadAcademy();
   assert.equal(listedAcademy.fromCache, false);
   assert.deepEqual(listedAcademy.modules.map((row) => row.id), [lessonId]);
+
+  await flushScheduledCatalogPersist();
+  const listOnlyOnDisk = JSON.parse(files.get(FILE_URI) ?? "{}") as {
+    jobBodies?: Record<string, unknown>;
+    moduleBodies?: Record<string, unknown>;
+  };
+  assert.equal(listOnlyOnDisk.jobBodies?.[jobId], undefined, "list flush must not persist job bodies");
+  assert.equal(listOnlyOnDisk.moduleBodies?.[lessonId], undefined, "list flush must not persist module bodies");
+
+  const liveJob = await loadJob(jobId);
+  assert.equal(liveJob.fromCache, false);
+  assert.equal(liveJob.job.description, "Persisted job description for cold offline QA.");
 
   const liveLesson = await loadModule(lessonId);
   assert.equal(liveLesson.fromCache, false);
@@ -416,8 +424,9 @@ test("offlineFirst QueryClient runs catalogue loaders while onlineManager report
   const lessonId = "query-offline-lesson";
   mountOnlineCatalogueFetch(jobId, lessonId);
   await loadJobs();
-  await loadJob(jobId);
   await loadAcademy();
+  await flushScheduledCatalogPersist();
+  await loadJob(jobId);
   await loadModule(lessonId);
   await flushScheduledCatalogPersist();
   simulateProcessRestart();
