@@ -1,5 +1,5 @@
 import { catalog } from "../cache/catalog";
-import { hydrateCatalogFromFile, persistCatalogToFile } from "../storage/fileKv";
+import { hydrateCatalogFromFile, persistCatalogToFile, schedulePersistCatalogToFile } from "../storage/fileKv";
 import { academyGeneration, jobCanonicalCommit, jobDetailGeneration, jobsGeneration, moduleGeneration } from "../cache/generation";
 import { fetchAcademy, fetchJob, fetchJobs, fetchModule } from "./client";
 import {
@@ -98,7 +98,7 @@ export async function loadJobs(signal?: AbortSignal): Promise<JobsLoad> {
       return { jobs: latest.jobs, fromCache, syncedAt: latest.jobsSyncedAt };
     }
     catalog.writeJobs(jobs);
-    void persistCatalogToFile();
+    schedulePersistCatalogToFile();
     return { jobs, fromCache: false, syncedAt: Date.now() };
   } catch (error) {
     if (isAbortError(error)) throw error;
@@ -133,6 +133,7 @@ export async function loadJob(id: string, signal?: AbortSignal): Promise<JobDeta
       return { job, fromCache: false };
     }
     catalog.writeJobBody(job);
+    schedulePersistCatalogToFile();
     return { job, fromCache: false };
   } catch (error) {
     if (isAbortError(error)) throw error;
@@ -160,7 +161,7 @@ export async function loadAcademy(signal?: AbortSignal): Promise<AcademyLoad> {
       return { modules: latest.modules, fromCache, syncedAt: latest.academySyncedAt };
     }
     catalog.writeAcademy(modules);
-    void persistCatalogToFile();
+    schedulePersistCatalogToFile();
     return { modules, fromCache: false, syncedAt: Date.now() };
   } catch (error) {
     if (isAbortError(error)) throw error;
@@ -193,6 +194,7 @@ export async function loadModule(id: string, signal?: AbortSignal): Promise<Modu
       return { module, fromCache: false };
     }
     catalog.writeModule(module);
+    schedulePersistCatalogToFile();
     return { module, fromCache: false };
   } catch (error) {
     if (isAbortError(error)) throw error;

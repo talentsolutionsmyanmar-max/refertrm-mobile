@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { after, mock, test } from "node:test";
-import { onlineManager, QueryClient } from "@tanstack/react-query";
+import { onlineManager } from "@tanstack/react-query";
+import { endpoints, JOBS_LIST_QUERY } from "../src/api/endpoints";
+import { createAppQueryClient } from "../src/query/client";
 import type { AcademyModuleDetail } from "../src/api/types";
 
 // Only the native filesystem boundary is mocked. Loaders, HTTP, parsers, cache, and hydration stay real.
@@ -40,6 +42,9 @@ let resetGenerations: GenerationApi["resetGenerations"];
 let getKv: KvApi["getKv"];
 let resetMemoryKv: KvApi["resetMemoryKv"];
 let persistCatalogToFile: FileKvApi["persistCatalogToFile"];
+let flushScheduledCatalogPersist: FileKvApi["flushScheduledCatalogPersist"];
+let resetHydrateCatalogForTests: FileKvApi["resetHydrateCatalogForTests"];
+let resetCatalogPersistForTests: FileKvApi["resetCatalogPersistForTests"];
 let TransportError: SignalApi["TransportError"];
 let isAbortError: SignalApi["isAbortError"];
 let parseJobsEnvelope: ParseApi["parseJobsEnvelope"];
@@ -62,6 +67,9 @@ test.before(async () => {
   getKv = kvApi.getKv;
   resetMemoryKv = kvApi.resetMemoryKv;
   persistCatalogToFile = fileKvApi.persistCatalogToFile;
+  flushScheduledCatalogPersist = fileKvApi.flushScheduledCatalogPersist;
+  resetHydrateCatalogForTests = fileKvApi.resetHydrateCatalogForTests;
+  resetCatalogPersistForTests = fileKvApi.resetCatalogPersistForTests;
   TransportError = signalApi.TransportError;
   isAbortError = signalApi.isAbortError;
   parseJobsEnvelope = parseApi.parseJobsEnvelope;
@@ -113,8 +121,64 @@ function reset(): void {
   files.clear();
   resetMemoryKv();
   resetGenerations();
+  resetHydrateCatalogForTests();
+  resetCatalogPersistForTests();
   globalThis.fetch = (async () => {
     throw new Error("unexpected unstubbed fetch");
+  }) as typeof fetch;
+}
+
+function simulateProcessRestart(): void {
+  resetMemoryKv();
+  resetGenerations();
+  resetHydrateCatalogForTests();
+  resetCatalogPersistForTests();
+  assert.equal(getKv().getString(CACHE_KEY), undefined, "cold memory after restart");
+  assert.ok(files.get(FILE_URI), "catalogue file must survive restart");
+}
+
+function jobDetailPayload(id: string) {
+  return {
+    job: {
+      ...job(id),
+      companyId: "qa-company",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      description: "Persisted job description for cold offline QA.",
+      requirements: "Persisted requirements.",
+      urgent: false,
+      featured: false,
+    },
+  };
+}
+
+function moduleDetailPayload(id: string) {
+  return { module: syntheticModule(id) };
+}
+
+function mountOnlineCatalogueFetch(jobId: string, lessonId: string): void {
+  const jobsListUrl = `${endpoints.jobs}?${JOBS_LIST_QUERY}`;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url =
+      typeof input === "string" ? input : input instanceof URL ? input.href : (input as Request).url;
+    if (url === jobsListUrl) {
+      return new Response(JSON.stringify({ jobs: [job(jobId)] }));
+    }
+    if (url === endpoints.job(jobId)) {
+      return new Response(JSON.stringify(jobDetailPayload(jobId)));
+    }
+    if (url === endpoints.academyPublic) {
+      return new Response(JSON.stringify({ success: true, count: 1, modules: [moduleRow(lessonId)] }));
+    }
+    if (url === endpoints.academyModule(lessonId)) {
+      return new Response(JSON.stringify(moduleDetailPayload(lessonId)));
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  }) as typeof fetch;
+}
+
+function offlineFetch(): void {
+  globalThis.fetch = (async () => {
+    throw new TypeError("Network request failed");
   }) as typeof fetch;
 }
 
@@ -290,73 +354,99 @@ for (const lane of lanes) {
   });
 }
 
-test("offline cold process hydrates saved job detail and lesson from disk without network", async () => {
+test("offline cold process hydrates job and lesson bodies after online loaders persisted them", async () => {
   reset();
   const jobId = "saved-job-1";
   const lessonId = "saved-lesson-1";
-  catalog.writeJobs(parseJobsEnvelope({ jobs: [job(jobId)] }));
-  catalog.writeJobBody({
-    id: jobId,
-    description: "Cached job description for QA.",
-    requirements: "Cached requirements.",
-  });
-  catalog.writeAcademy(parseAcademyEnvelope({ modules: [moduleRow(lessonId)] }));
-  catalog.writeModule(syntheticModule(lessonId));
-  await persistCatalogToFile();
-  resetMemoryKv();
-  assert.equal(getKv().getString(CACHE_KEY), undefined);
+  mountOnlineCatalogueFetch(jobId, lessonId);
 
-  globalThis.fetch = (async () => {
-    throw new TypeError("Network request failed");
-  }) as typeof fetch;
+  const listed = await loadJobs();
+  assert.equal(listed.fromCache, false);
+  assert.deepEqual(listed.jobs.map((row) => row.id), [jobId]);
 
-  const jobDetailOnly = await loadJob(jobId);
-  assert.equal(jobDetailOnly.fromCache, true);
-  assert.equal(jobDetailOnly.job.description, "Cached job description for QA.");
+  const liveJob = await loadJob(jobId);
+  assert.equal(liveJob.fromCache, false);
+  assert.equal(liveJob.job.description, "Persisted job description for cold offline QA.");
 
-  const lessonOnly = await loadModule(lessonId);
-  assert.equal(lessonOnly.fromCache, true);
-  assert.equal(lessonOnly.module.content?.[0]?.content, "English lesson body");
+  const listedAcademy = await loadAcademy();
+  assert.equal(listedAcademy.fromCache, false);
+  assert.deepEqual(listedAcademy.modules.map((row) => row.id), [lessonId]);
 
-  const jobs = await loadJobs();
-  assert.deepEqual(jobs.jobs.map((row) => row.id), [jobId]);
-  assert.equal(jobs.fromCache, true);
+  const liveLesson = await loadModule(lessonId);
+  assert.equal(liveLesson.fromCache, false);
+  assert.equal(liveLesson.module.content?.[0]?.content, "English lesson body");
 
-  const academy = await loadAcademy();
-  assert.deepEqual(academy.modules.map((row) => row.id), [lessonId]);
-  assert.equal(academy.fromCache, true);
+  await flushScheduledCatalogPersist();
+  const onDisk = JSON.parse(files.get(FILE_URI) ?? "{}") as {
+    jobBodies?: Record<string, { description: string | null }>;
+    moduleBodies?: Record<string, { content?: Array<{ content?: string }> }>;
+  };
+  assert.equal(onDisk.jobBodies?.[jobId]?.description, "Persisted job description for cold offline QA.");
+  assert.equal(onDisk.moduleBodies?.[lessonId]?.content?.[0]?.content, "English lesson body");
+
+  simulateProcessRestart();
+  offlineFetch();
+
+  const coldJob = await loadJob(jobId);
+  assert.equal(coldJob.fromCache, true);
+  assert.equal(coldJob.job.description, "Persisted job description for cold offline QA.");
+
+  const coldLesson = await loadModule(lessonId);
+  assert.equal(coldLesson.fromCache, true);
+  assert.equal(coldLesson.module.content?.[0]?.content, "English lesson body");
+
+  const coldJobs = await loadJobs();
+  assert.deepEqual(coldJobs.jobs.map((row) => row.id), [jobId]);
+  assert.equal(coldJobs.fromCache, true);
+
+  const coldAcademy = await loadAcademy();
+  assert.deepEqual(coldAcademy.modules.map((row) => row.id), [lessonId]);
+  assert.equal(coldAcademy.fromCache, true);
 });
 
 test("offlineFirst QueryClient runs catalogue loaders while onlineManager reports offline", async () => {
   reset();
-  catalog.writeJobs(parseJobsEnvelope({ jobs: [job("query-offline-job")] }));
-  catalog.writeAcademy(parseAcademyEnvelope({ modules: [moduleRow("query-offline-lesson")] }));
-  await persistCatalogToFile();
-  resetMemoryKv();
-  globalThis.fetch = (async () => {
-    throw new TypeError("Network request failed");
-  }) as typeof fetch;
+  const jobId = "query-offline-job";
+  const lessonId = "query-offline-lesson";
+  mountOnlineCatalogueFetch(jobId, lessonId);
+  await loadJobs();
+  await loadJob(jobId);
+  await loadAcademy();
+  await loadModule(lessonId);
+  await flushScheduledCatalogPersist();
+  simulateProcessRestart();
+  offlineFetch();
 
   onlineManager.setOnline(false);
-  const client = new QueryClient({
-    defaultOptions: {
-      queries: { networkMode: "offlineFirst", retry: false },
-    },
-  });
+  const client = createAppQueryClient();
   try {
     const jobs = await client.fetchQuery({
       queryKey: ["jobs-offline-cold"],
       queryFn: ({ signal }) => loadJobs(signal),
     });
-    assert.deepEqual(jobs.jobs.map((row) => row.id), ["query-offline-job"]);
+    assert.deepEqual(jobs.jobs.map((row) => row.id), [jobId]);
     assert.equal(jobs.fromCache, true);
+
+    const jobDetail = await client.fetchQuery({
+      queryKey: ["job-offline-cold", jobId],
+      queryFn: ({ signal }) => loadJob(jobId, signal),
+    });
+    assert.equal(jobDetail.fromCache, true);
+    assert.equal(jobDetail.job.description, "Persisted job description for cold offline QA.");
 
     const academy = await client.fetchQuery({
       queryKey: ["academy-offline-cold"],
       queryFn: ({ signal }) => loadAcademy(signal),
     });
-    assert.deepEqual(academy.modules.map((row) => row.id), ["query-offline-lesson"]);
+    assert.deepEqual(academy.modules.map((row) => row.id), [lessonId]);
     assert.equal(academy.fromCache, true);
+
+    const lesson = await client.fetchQuery({
+      queryKey: ["academy-module-offline-cold", lessonId],
+      queryFn: ({ signal }) => loadModule(lessonId, signal),
+    });
+    assert.equal(lesson.fromCache, true);
+    assert.equal(lesson.module.content?.[0]?.content, "English lesson body");
   } finally {
     client.clear();
     onlineManager.setOnline(true);

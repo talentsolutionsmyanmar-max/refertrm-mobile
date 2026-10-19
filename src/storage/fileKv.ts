@@ -54,14 +54,55 @@ export const fileKv: KeyValue = {
   },
 };
 
+let hydrateInflight: Promise<void> | null = null;
+
 export async function hydrateCatalogFromFile(): Promise<void> {
-  const kv = getKv();
-  if (kv.getString(CATALOG_KEY)) return;
-  const raw = await readFile();
-  if (!raw) return;
-  kv.set(CATALOG_KEY, raw);
-  if (kv !== memoryKv) memoryKv.set(CATALOG_KEY, raw);
-  cache.set(CATALOG_KEY, raw);
+  if (getKv().getString(CATALOG_KEY)) return;
+  if (!hydrateInflight) {
+    hydrateInflight = (async () => {
+      const kv = getKv();
+      if (kv.getString(CATALOG_KEY)) return;
+      const raw = await readFile();
+      if (!raw) return;
+      kv.set(CATALOG_KEY, raw);
+      if (kv !== memoryKv) memoryKv.set(CATALOG_KEY, raw);
+      cache.set(CATALOG_KEY, raw);
+    })().finally(() => {
+      hydrateInflight = null;
+    });
+  }
+  await hydrateInflight;
+}
+
+export function resetHydrateCatalogForTests(): void {
+  hydrateInflight = null;
+}
+
+let persistTimer: ReturnType<typeof setTimeout> | undefined;
+let persistChain: Promise<void> = Promise.resolve();
+
+/** Coalesce rapid catalogue writes into one disk flush (job/module bodies + list sync). */
+export function schedulePersistCatalogToFile(): void {
+  if (persistTimer !== undefined) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    persistTimer = undefined;
+    persistChain = persistChain.then(() => persistCatalogToFile());
+  }, 25);
+}
+
+export async function flushScheduledCatalogPersist(): Promise<void> {
+  if (persistTimer !== undefined) {
+    clearTimeout(persistTimer);
+    persistTimer = undefined;
+  }
+  await persistChain;
+  await persistCatalogToFile();
+}
+
+export function resetCatalogPersistForTests(): void {
+  if (persistTimer !== undefined) clearTimeout(persistTimer);
+  persistTimer = undefined;
+  persistChain = Promise.resolve();
 }
 
 export async function persistCatalogToFile(): Promise<void> {

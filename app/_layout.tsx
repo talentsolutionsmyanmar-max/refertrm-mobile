@@ -3,7 +3,8 @@ import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Linking from "expo-linking";
 import NetInfo from "@react-native-community/netinfo";
-import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
+import { QueryClientProvider, onlineManager } from "@tanstack/react-query";
+import { createAppQueryClient } from "../src/query/client";
 import { parseDeepLink } from "../src/linking/paths";
 import { isHttpsStartUrl, openStartInBrowser } from "../src/linking/start";
 import { copy } from "../src/copy/en";
@@ -16,20 +17,7 @@ onlineManager.setEventListener((setOnline) =>
 
 export default function RootLayout() {
   const router = useRouter();
-  const [client] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 30 * 60 * 1000,
-            retry: false,
-            refetchOnReconnect: true,
-            refetchOnWindowFocus: false,
-            networkMode: "offlineFirst",
-          },
-        },
-      }),
-  );
+  const [client] = useState(() => createAppQueryClient());
 
   useEffect(() => {
     function onUrl(url: string) {
