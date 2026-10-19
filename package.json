@@ -3,10 +3,14 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "expo start --android",
     "android": "expo start --android",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-test-module-mocks --import tsx --test tests/*.test.ts tests/*.test.mjs"
   },
   "dependencies": {
     "@react-native-community/netinfo": "11.4.1",
@@ -27,6 +31,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "tsx": "^4.19.4",
     "typescript": "~5.8.3"
   }
 }

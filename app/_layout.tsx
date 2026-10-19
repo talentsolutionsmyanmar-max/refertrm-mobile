@@ -1,27 +1,34 @@
 import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Linking from "expo-linking";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import NetInfo from "@react-native-community/netinfo";
+import { QueryClientProvider, onlineManager } from "@tanstack/react-query";
+import { createAppQueryClient } from "../src/query/client";
+import { flushScheduledCatalogPersist } from "../src/storage/fileKv";
 import { parseDeepLink } from "../src/linking/paths";
 import { isHttpsStartUrl, openStartInBrowser } from "../src/linking/start";
 import { copy } from "../src/copy/en";
 
+onlineManager.setEventListener((setOnline) =>
+  NetInfo.addEventListener((state) => {
+    setOnline(state.isConnected !== false && state.isInternetReachable !== false);
+  }),
+);
+
 export default function RootLayout() {
   const router = useRouter();
-  const [client] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 30 * 60 * 1000,
-            retry: false,
-            refetchOnReconnect: true,
-            refetchOnWindowFocus: false,
-          },
-        },
-      }),
-  );
+  const [client] = useState(() => createAppQueryClient());
+
+  useEffect(() => {
+    const persistSub = AppState.addEventListener("change", (state) => {
+      if (state === "background" || state === "inactive") {
+        void flushScheduledCatalogPersist();
+      }
+    });
+    return () => persistSub.remove();
+  }, []);
 
   useEffect(() => {
     function onUrl(url: string) {

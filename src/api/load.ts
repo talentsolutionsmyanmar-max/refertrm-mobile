@@ -1,5 +1,5 @@
 import { catalog } from "../cache/catalog";
-import { hydrateCatalogFromFile, persistCatalogToFile } from "../storage/fileKv";
+import { hydrateCatalogFromFile, schedulePersistCatalogToFile } from "../storage/fileKv";
 import { academyGeneration, jobCanonicalCommit, jobDetailGeneration, jobsGeneration, moduleGeneration } from "../cache/generation";
 import { fetchAcademy, fetchJob, fetchJobs, fetchModule } from "./client";
 import {
@@ -98,7 +98,7 @@ export async function loadJobs(signal?: AbortSignal): Promise<JobsLoad> {
       return { jobs: latest.jobs, fromCache, syncedAt: latest.jobsSyncedAt };
     }
     catalog.writeJobs(jobs);
-    void persistCatalogToFile();
+    schedulePersistCatalogToFile();
     return { jobs, fromCache: false, syncedAt: Date.now() };
   } catch (error) {
     if (isAbortError(error)) throw error;
@@ -110,6 +110,7 @@ export async function loadJobs(signal?: AbortSignal): Promise<JobsLoad> {
 }
 
 export async function loadJob(id: string, signal?: AbortSignal): Promise<JobDetailLoad> {
+  await hydrateCatalogFromFile();
   const ticket = jobDetailGeneration.issue(id);
   const ordinal = jobCanonicalCommit.issue();
   const cachedBody = catalog.findJobBody(id);
@@ -132,6 +133,7 @@ export async function loadJob(id: string, signal?: AbortSignal): Promise<JobDeta
       return { job, fromCache: false };
     }
     catalog.writeJobBody(job);
+    schedulePersistCatalogToFile();
     return { job, fromCache: false };
   } catch (error) {
     if (isAbortError(error)) throw error;
@@ -159,7 +161,7 @@ export async function loadAcademy(signal?: AbortSignal): Promise<AcademyLoad> {
       return { modules: latest.modules, fromCache, syncedAt: latest.academySyncedAt };
     }
     catalog.writeAcademy(modules);
-    void persistCatalogToFile();
+    schedulePersistCatalogToFile();
     return { modules, fromCache: false, syncedAt: Date.now() };
   } catch (error) {
     if (isAbortError(error)) throw error;
@@ -170,7 +172,13 @@ export async function loadAcademy(signal?: AbortSignal): Promise<AcademyLoad> {
   }
 }
 
-export async function loadModule(id: string, signal?: AbortSignal): Promise<AcademyModuleDetail> {
+export type ModuleDetailLoad = {
+  module: AcademyModuleDetail;
+  fromCache: boolean;
+};
+
+export async function loadModule(id: string, signal?: AbortSignal): Promise<ModuleDetailLoad> {
+  await hydrateCatalogFromFile();
   const ticket = moduleGeneration.issue(id);
   const cached = catalog.findModuleBody(id);
   try {
@@ -182,14 +190,15 @@ export async function loadModule(id: string, signal?: AbortSignal): Promise<Acad
     throwIfAborted(signal);
     if (!moduleGeneration.apply(id, ticket)) {
       const latest = catalog.findModuleBody(id) ?? catalog.findModuleBody(module.id);
-      if (latest && isReadableModule(latest)) return latest;
-      return module;
+      if (latest && isReadableModule(latest)) return { module: latest, fromCache: true };
+      return { module, fromCache: false };
     }
     catalog.writeModule(module);
-    return module;
+    schedulePersistCatalogToFile();
+    return { module, fromCache: false };
   } catch (error) {
     if (isAbortError(error)) throw error;
-    if (cached && isReadableModule(cached)) return cached;
+    if (cached && isReadableModule(cached)) return { module: cached, fromCache: true };
     throw error;
   }
 }
