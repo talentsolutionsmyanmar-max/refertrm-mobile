@@ -14,9 +14,17 @@ async function readFile(): Promise<string | undefined> {
   if (!uri) return undefined;
   try {
     const info = await FileSystem.getInfoAsync(uri);
-    if (!info.exists) return undefined;
-    const raw = await FileSystem.readAsStringAsync(uri);
-    return raw || undefined;
+    if (info.exists) {
+      const raw = await FileSystem.readAsStringAsync(uri);
+      return raw || undefined;
+    }
+    const tmp = `${uri}.tmp`;
+    const tmpInfo = await FileSystem.getInfoAsync(tmp);
+    if (tmpInfo.exists) {
+      const raw = await FileSystem.readAsStringAsync(tmp);
+      return raw || undefined;
+    }
+    return undefined;
   } catch {
     return undefined;
   }
@@ -28,12 +36,8 @@ async function writeFile(value: string): Promise<void> {
   const tmp = `${uri}.tmp`;
   try {
     await FileSystem.writeAsStringAsync(tmp, value);
-    // iOS moveAsync does not replace an existing destination; delete first. There is a
-    // brief window where the catalogue file is missing — concurrent hydrate may see empty.
-    const dest = await FileSystem.getInfoAsync(uri);
-    if (dest.exists) {
-      await FileSystem.deleteAsync(uri, { idempotent: true });
-    }
+    // expo-file-system 19 moveAsync replaces the destination on iOS (native removes it first);
+    // Android uses renameTo, which atomically replaces the target file.
     await FileSystem.moveAsync({ from: tmp, to: uri });
   } catch {
     try {

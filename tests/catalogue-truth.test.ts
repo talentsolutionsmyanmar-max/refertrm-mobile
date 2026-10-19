@@ -84,7 +84,41 @@ test.before(async () => {
 
 const CACHE_KEY = "refertrm.p1.catalog.v1";
 const FILE_URI = "file:///catalogue-test/refertrm.p1.catalog.v1.json";
+const JOB_BODY_DESCRIPTION = "Persisted job description for cold offline QA.";
+const LESSON_BODY_CONTENT = "English lesson body";
 const originalFetch = globalThis.fetch;
+
+type DiskCatalogue = {
+  jobBodies?: Record<string, { description: string | null }>;
+  moduleBodies?: Record<string, { content?: Array<{ content?: string }> }>;
+};
+
+function assertCatalogueFileOnDisk(): void {
+  assert.ok(files.has(FILE_URI), "catalogue file must exist on disk");
+}
+
+function readCatalogueOnDisk(): DiskCatalogue {
+  assertCatalogueFileOnDisk();
+  return JSON.parse(files.get(FILE_URI)!) as DiskCatalogue;
+}
+
+function assertListFlushHasNoBodies(jobId: string, lessonId: string): void {
+  const disk = readCatalogueOnDisk();
+  assert.equal(disk.jobBodies?.[jobId], undefined, "list flush must not persist job bodies");
+  assert.equal(disk.moduleBodies?.[lessonId], undefined, "list flush must not persist module bodies");
+}
+
+function assertJobBodyOnDisk(jobId: string): void {
+  assert.equal(readCatalogueOnDisk().jobBodies?.[jobId]?.description, JOB_BODY_DESCRIPTION);
+}
+
+function assertModuleBodyAbsentOnDisk(lessonId: string): void {
+  assert.equal(readCatalogueOnDisk().moduleBodies?.[lessonId], undefined);
+}
+
+function assertModuleBodyOnDisk(lessonId: string): void {
+  assert.equal(readCatalogueOnDisk().moduleBodies?.[lessonId]?.content?.[0]?.content, LESSON_BODY_CONTENT);
+}
 
 const job = (id: string) => ({
   id,
@@ -149,7 +183,7 @@ function jobDetailPayload(id: string) {
       ...job(id),
       companyId: "qa-company",
       createdAt: "2026-01-01T00:00:00.000Z",
-      description: "Persisted job description for cold offline QA.",
+      description: JOB_BODY_DESCRIPTION,
       requirements: "Persisted requirements.",
       urgent: false,
       featured: false,
@@ -360,6 +394,13 @@ for (const lane of lanes) {
   });
 }
 
+test("flushScheduledCatalogPersist writes nothing when no persist timer is pending", async () => {
+  reset();
+  assert.equal(files.has(FILE_URI), false);
+  await flushScheduledCatalogPersist();
+  assert.equal(files.has(FILE_URI), false);
+});
+
 test("offline cold process hydrates job and lesson bodies after online loaders persisted them", async () => {
   reset();
   const jobId = "saved-job-1";
@@ -375,39 +416,31 @@ test("offline cold process hydrates job and lesson bodies after online loaders p
   assert.deepEqual(listedAcademy.modules.map((row) => row.id), [lessonId]);
 
   await flushScheduledCatalogPersist();
-  const listOnlyOnDisk = JSON.parse(files.get(FILE_URI) ?? "{}") as {
-    jobBodies?: Record<string, unknown>;
-    moduleBodies?: Record<string, unknown>;
-  };
-  assert.equal(listOnlyOnDisk.jobBodies?.[jobId], undefined, "list flush must not persist job bodies");
-  assert.equal(listOnlyOnDisk.moduleBodies?.[lessonId], undefined, "list flush must not persist module bodies");
+  assertListFlushHasNoBodies(jobId, lessonId);
 
   const liveJob = await loadJob(jobId);
   assert.equal(liveJob.fromCache, false);
-  assert.equal(liveJob.job.description, "Persisted job description for cold offline QA.");
+  assert.equal(liveJob.job.description, JOB_BODY_DESCRIPTION);
+  await flushScheduledCatalogPersist();
+  assertJobBodyOnDisk(jobId);
+  assertModuleBodyAbsentOnDisk(lessonId);
 
   const liveLesson = await loadModule(lessonId);
   assert.equal(liveLesson.fromCache, false);
-  assert.equal(liveLesson.module.content?.[0]?.content, "English lesson body");
-
+  assert.equal(liveLesson.module.content?.[0]?.content, LESSON_BODY_CONTENT);
   await flushScheduledCatalogPersist();
-  const onDisk = JSON.parse(files.get(FILE_URI) ?? "{}") as {
-    jobBodies?: Record<string, { description: string | null }>;
-    moduleBodies?: Record<string, { content?: Array<{ content?: string }> }>;
-  };
-  assert.equal(onDisk.jobBodies?.[jobId]?.description, "Persisted job description for cold offline QA.");
-  assert.equal(onDisk.moduleBodies?.[lessonId]?.content?.[0]?.content, "English lesson body");
+  assertModuleBodyOnDisk(lessonId);
 
   simulateProcessRestart();
   offlineFetch();
 
   const coldJob = await loadJob(jobId);
   assert.equal(coldJob.fromCache, true);
-  assert.equal(coldJob.job.description, "Persisted job description for cold offline QA.");
+  assert.equal(coldJob.job.description, JOB_BODY_DESCRIPTION);
 
   const coldLesson = await loadModule(lessonId);
   assert.equal(coldLesson.fromCache, true);
-  assert.equal(coldLesson.module.content?.[0]?.content, "English lesson body");
+  assert.equal(coldLesson.module.content?.[0]?.content, LESSON_BODY_CONTENT);
 
   const coldJobs = await loadJobs();
   assert.deepEqual(coldJobs.jobs.map((row) => row.id), [jobId]);
@@ -426,9 +459,14 @@ test("offlineFirst QueryClient runs catalogue loaders while onlineManager report
   await loadJobs();
   await loadAcademy();
   await flushScheduledCatalogPersist();
+  assertListFlushHasNoBodies(jobId, lessonId);
   await loadJob(jobId);
+  await flushScheduledCatalogPersist();
+  assertJobBodyOnDisk(jobId);
+  assertModuleBodyAbsentOnDisk(lessonId);
   await loadModule(lessonId);
   await flushScheduledCatalogPersist();
+  assertModuleBodyOnDisk(lessonId);
   simulateProcessRestart();
   offlineFetch();
 
@@ -447,7 +485,7 @@ test("offlineFirst QueryClient runs catalogue loaders while onlineManager report
       queryFn: ({ signal }) => loadJob(jobId, signal),
     });
     assert.equal(jobDetail.fromCache, true);
-    assert.equal(jobDetail.job.description, "Persisted job description for cold offline QA.");
+    assert.equal(jobDetail.job.description, JOB_BODY_DESCRIPTION);
 
     const academy = await client.fetchQuery({
       queryKey: ["academy-offline-cold"],
@@ -461,7 +499,7 @@ test("offlineFirst QueryClient runs catalogue loaders while onlineManager report
       queryFn: ({ signal }) => loadModule(lessonId, signal),
     });
     assert.equal(lesson.fromCache, true);
-    assert.equal(lesson.module.content?.[0]?.content, "English lesson body");
+    assert.equal(lesson.module.content?.[0]?.content, LESSON_BODY_CONTENT);
   } finally {
     client.clear();
     onlineManager.setOnline(true);
