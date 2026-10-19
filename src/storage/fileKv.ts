@@ -25,10 +25,16 @@ async function readFile(): Promise<string | undefined> {
 async function writeFile(value: string): Promise<void> {
   const uri = fileUri();
   if (!uri) return;
+  const tmp = `${uri}.tmp`;
   try {
-    await FileSystem.writeAsStringAsync(uri, value);
+    await FileSystem.writeAsStringAsync(tmp, value);
+    await FileSystem.moveAsync({ from: tmp, to: uri });
   } catch {
-    /* persist is best-effort */
+    try {
+      await FileSystem.deleteAsync(tmp, { idempotent: true });
+    } catch {
+      /* best-effort cleanup */
+    }
   }
 }
 
@@ -64,6 +70,7 @@ export async function hydrateCatalogFromFile(): Promise<void> {
       if (kv.getString(CATALOG_KEY)) return;
       const raw = await readFile();
       if (!raw) return;
+      if (getKv().getString(CATALOG_KEY)) return;
       kv.set(CATALOG_KEY, raw);
       if (kv !== memoryKv) memoryKv.set(CATALOG_KEY, raw);
       cache.set(CATALOG_KEY, raw);
@@ -90,13 +97,14 @@ export function schedulePersistCatalogToFile(): void {
   }, 25);
 }
 
+/** Test helper: run a pending debounced flush only — never writes memory that was never scheduled. */
 export async function flushScheduledCatalogPersist(): Promise<void> {
   if (persistTimer !== undefined) {
     clearTimeout(persistTimer);
     persistTimer = undefined;
+    persistChain = persistChain.then(() => persistCatalogToFile());
   }
   await persistChain;
-  await persistCatalogToFile();
 }
 
 export function resetCatalogPersistForTests(): void {

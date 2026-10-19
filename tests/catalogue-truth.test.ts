@@ -22,6 +22,12 @@ mock.module("expo-file-system/legacy", {
     deleteAsync: async (uri: string) => {
       files.delete(uri);
     },
+    moveAsync: async ({ from, to }: { from: string; to: string }) => {
+      const value = files.get(from);
+      if (value === undefined) throw new Error(`missing tmp file ${from}`);
+      files.set(to, value);
+      files.delete(from);
+    },
   },
 });
 

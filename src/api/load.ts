@@ -1,5 +1,5 @@
 import { catalog } from "../cache/catalog";
-import { hydrateCatalogFromFile, persistCatalogToFile, schedulePersistCatalogToFile } from "../storage/fileKv";
+import { hydrateCatalogFromFile, schedulePersistCatalogToFile } from "../storage/fileKv";
 import { academyGeneration, jobCanonicalCommit, jobDetailGeneration, jobsGeneration, moduleGeneration } from "../cache/generation";
 import { fetchAcademy, fetchJob, fetchJobs, fetchModule } from "./client";
 import {
