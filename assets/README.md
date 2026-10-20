@@ -14,15 +14,8 @@ Background for launcher/play assets: `#2A3764`, sampled from the master illustra
 | `adaptive-icon.png` | 1024×1024 RGBA | Expo adaptive foreground, complete mark in 66% safe zone |
 | `play/adaptive-foreground-432.png` | 432×432 RGBA | Adaptive foreground |
 | `play/adaptive-background-432.png` | 432×432 RGB | Solid `#2A3764` |
-| `launcher/ic_launcher-*.png` | 48–192 RGB | mdpi–xxxhdpi. Not production-ready. |
+| `launcher/ic_launcher-*.png` | 48–192 RGB | mdpi–xxxhdpi, compact TRM mark |
 
-## Release risk — launcher icon (unresolved)
+## Launcher icon — approved compact mark
 
-The full wordmark is unreadable at launcher size. Android displays the icon at ~48dp regardless of the xxxhdpi 192px file. Native pixel size does not fix real-device legibility.
-
-- Do not invent a compact symbol.
-- Do not restore a Z.
-- Do not crop one letter from TRM.
-- Do not call the launcher icon production-ready.
-
-Phase 1 development may continue. Final Play submission stays blocked until KoKo supplies or approves a legitimate compact brand mark, or explicitly accepts this limitation.
+Ko Ko approved this compact mark on 20 Oct 2026: solid simplified TRM wordmark, bold flat letters `#74BDF2` on solid `#2A3764`, no illustrations inside the letters (DejaVu Sans Bold, rendered with Pillow). `icon.png` letters ~70% wide; adaptive foreground letters ~58% wide, inside the 66% safe zone. The original detailed artwork stays in `play/feature-graphic.png` and `brand/trm-mark*` (unchanged). The previous "launcher icon unresolved" release risk is closed.
