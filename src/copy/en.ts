@@ -63,6 +63,8 @@ export const copy = {
     count: (n: number) => `${n} lessons`,
     search: "Search lessons",
     bodyOffline: "This lesson needs a connection the first time.",
+    notInApp: "This page is on the ReferTRM website, not in the app yet.",
+    openOnWebsite: "Open on ReferTRM.com",
     languageEn: "English",
     languageMm: "Myanmar",
     myanmarAvailable: "Myanmar available",
