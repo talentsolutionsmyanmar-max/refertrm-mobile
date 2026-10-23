@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#2A3764",
+      "backgroundColor": "#2B3767",
       "image": "./assets/icon.png"
     },
     "ios": {
@@ -19,7 +19,7 @@
       "package": "com.refertrm.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2A3764"
+        "backgroundColor": "#2B3767"
       },
       "permissions": [
         "INTERNET",
@@ -46,6 +46,12 @@
             }
           ]
         }
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE"
       ]
     },
     "plugins": [
