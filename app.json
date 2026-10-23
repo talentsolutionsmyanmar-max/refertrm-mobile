@@ -68,6 +68,16 @@
             "./assets/fonts/Padauk-700.ttf"
           ]
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "# Native modules without bundled R8 keep rules (reached via JNI/reflection)\n-keep class com.mrousavy.mmkv.** { *; }\n-keep class com.reactnativecommunity.netinfo.** { *; }\n"
+          }
+        }
       ]
     ],
     "experiments": {
