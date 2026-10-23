@@ -6,6 +6,8 @@ import { loadAcademy, loadModule } from "../../src/api/load";
 import { staleContentBanner } from "../../src/api/catalogue-presentation";
 import { parseLessonBlocks, parseQuiz, showMmToggle } from "../../src/api/lesson";
 import { Banner, RetryState } from "../../src/components/ui";
+import { webLessonUrl } from "../../src/linking/lessonWeb";
+import { openWeb } from "../../src/linking/start";
 import { errorMessage } from "../../src/copy/error";
 import { copy } from "../../src/copy/en";
 import { useOnline } from "../../src/hooks/useOnline";
@@ -65,9 +67,36 @@ export default function LessonScreen() {
   }
 
   if (!listed && !module) {
+    // Not an Academy lesson (e.g. a public help article on the website).
+    // Offer the website page instead of a dead end. No auto-open, so a
+    // link the website hands back to the app can never loop.
+    const webUrl = webLessonUrl(slug);
     return (
       <View style={{ flex: 1, backgroundColor: color.white, padding: 16 }}>
-        <Text style={{ color: color.muted }}>{copy.errors.notFound}</Text>
+        <Text style={{ color: color.muted }}>{webUrl ? copy.academy.notInApp : copy.errors.notFound}</Text>
+        {webUrl ? (
+          <Pressable
+            onPress={() => void openWeb(webUrl).catch(() => undefined)}
+            accessibilityRole="link"
+            accessibilityLabel={copy.academy.openOnWebsite}
+            style={{
+              minHeight: tap,
+              marginTop: 12,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              justifyContent: "center",
+              backgroundColor: color.navy,
+              alignSelf: "flex-start",
+            }}
+          >
+            <Text style={{ color: color.white, fontWeight: "600" }}>{copy.academy.openOnWebsite}</Text>
+          </Pressable>
+        ) : null}
+        <Link href="/learn" asChild>
+          <Pressable style={{ minHeight: tap, justifyContent: "center", marginTop: 8 }}>
+            <Text style={{ color: color.tealDark, fontWeight: "600" }}>{copy.nav.academy}</Text>
+          </Pressable>
+        </Link>
       </View>
     );
   }
