@@ -218,7 +218,7 @@ export function parseModuleListItem(raw: unknown): AcademyModuleListItem | null 
     slug,
     ksaFamily: asNullableString(rec.ksaFamily),
     ksaLevel: asNullableString(rec.ksaLevel),
-    mmReady: asBoolean(rec.mmReady),
+    mmReady: asBoolean(rec.mmReady ?? rec.mm_ready),
     quizCount: typeof rec.quizCount === "number" ? rec.quizCount : 0,
   };
 }
@@ -253,16 +253,18 @@ export function parseModuleDetail(raw: unknown): AcademyModuleDetail | null {
     titleMm: asNullableString(inner.titleMm),
     category: asString(inner.category) ?? "",
     durationMinutes: asNullableNumber(inner.durationMinutes),
-    xpReward: asNullableNumber(inner.xpReward),
+    xpReward: asNullableNumber(inner.xpReward ?? inner.xp_reward),
     content: asJson(inner.content),
     contentMm: asJson(inner.contentMm),
-    mmContentReady: typeof inner.mmContentReady === "boolean" ? inner.mmContentReady : undefined,
-    mmReady: typeof inner.mmReady === "boolean" ? inner.mmReady : undefined,
+    // Live API serializes the MM readiness flags snake_case (mm_content_ready);
+    // other clients send camelCase — accept both.
+    mmContentReady: asStrictBoolean(inner.mm_content_ready ?? inner.mmContentReady) ?? undefined,
+    mmReady: asStrictBoolean(inner.mm_ready ?? inner.mmReady) ?? undefined,
     isPublished: inner.isPublished === undefined ? undefined : inner.isPublished === true,
     quizQuestions: asJson(inner.quizQuestions),
     quizQuestionsMm: asJson(inner.quizQuestionsMm),
-    furtherReadingUrl: asNullableString(inner.furtherReadingUrl),
-    furtherReadingLabel: asNullableString(inner.furtherReadingLabel),
+    furtherReadingUrl: asNullableString(inner.furtherReadingUrl ?? inner.further_reading_url),
+    furtherReadingLabel: asNullableString(inner.furtherReadingLabel ?? inner.further_reading_label),
     hookText: asNullableString(inner.hookText),
     keyTakeaway: asNullableString(inner.keyTakeaway),
     commonMistake: asNullableString(inner.commonMistake),
