@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
+import { SEARCH_DEBOUNCE_MS, trackAcademySearchUsed } from "../../src/analytics/client";
 import { filterModules, uniqueCategories } from "../../src/api/filter";
 import { loadAcademy } from "../../src/api/load";
 import { cataloguePresentation } from "../../src/api/catalogue-presentation";
@@ -31,6 +32,18 @@ export default function AcademyScreen() {
     isError: query.isError,
     online,
   });
+
+  const visibleCountRef = useRef(visible.length);
+  visibleCountRef.current = visible.length;
+
+  useEffect(() => {
+    const q = search.trim();
+    if (!q) return;
+    const handle = setTimeout(() => {
+      trackAcademySearchUsed("learn_catalog", q, visibleCountRef.current);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(handle);
+  }, [search]);
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>

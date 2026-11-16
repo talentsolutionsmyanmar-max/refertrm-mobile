@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import Constants from "expo-constants";
 import * as Linking from "expo-linking";
 import NetInfo from "@react-native-community/netinfo";
 import { QueryClientProvider, onlineManager } from "@tanstack/react-query";
+import { captureProductEvent, initProductAnalytics } from "../src/analytics/client";
 import { createAppQueryClient } from "../src/query/client";
 import { flushScheduledCatalogPersist } from "../src/storage/fileKv";
 import { parseDeepLink } from "../src/linking/paths";
@@ -22,10 +24,24 @@ export default function RootLayout() {
   const [client] = useState(() => createAppQueryClient());
 
   useEffect(() => {
+    initProductAnalytics({
+      platform: Platform.OS,
+      app_version: Constants.expoConfig?.version ?? "1.0.0",
+    });
+    let last = AppState.currentState;
     const persistSub = AppState.addEventListener("change", (state) => {
       if (state === "background" || state === "inactive") {
         void flushScheduledCatalogPersist();
       }
+      if ((last === "background" || last === "inactive") && state === "active") {
+        captureProductEvent("app_opened", {
+          platform: Platform.OS,
+          app_version: Constants.expoConfig?.version ?? "1.0.0",
+          source: "android",
+          page_path: "/",
+        });
+      }
+      last = state;
     });
     return () => persistSub.remove();
   }, []);
