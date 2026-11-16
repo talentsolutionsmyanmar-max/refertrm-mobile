@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import { captureProductEvent } from "../../src/analytics/client";
 import { loadAcademy, loadModule } from "../../src/api/load";
 import { staleContentBanner } from "../../src/api/catalogue-presentation";
 import { parseLessonBlocks, parseQuiz, showMmToggle } from "../../src/api/lesson";
@@ -38,6 +39,21 @@ export default function LessonScreen() {
   });
   const [mm, setMm] = useState(false);
   const canToggle = module ? showMmToggle(Boolean(listed?.mmReady ?? module.mmReady), module) : false;
+  const lessonId = module?.id ?? listed?.id;
+  const category = module?.category ?? listed?.category;
+  const pathSlug = typeof slug === "string" ? slug : slug?.[0];
+  const pagePath = pathSlug ? `/learn/${pathSlug}` : "/learn";
+
+  useEffect(() => {
+    if (!lessonId) return;
+    captureProductEvent("academy_lesson_started", {
+      lesson_id: lessonId,
+      module_id: lessonId,
+      category,
+      surface: "learn_lesson",
+      page_path: pagePath,
+    });
+  }, [lessonId, category, pagePath]);
   const blocks = useMemo(
     () => (module ? parseLessonBlocks(mm ? module.contentMm : module.content) : []),
     [module, mm],
@@ -159,7 +175,16 @@ export default function LessonScreen() {
         {canToggle ? (
           <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
             <Pressable
-              onPress={() => setMm(false)}
+              onPress={() => {
+                if (!mm) return;
+                captureProductEvent("language_toggled", {
+                  from_language: "my",
+                  to_language: "en",
+                  surface: "academy_lesson",
+                  page_path: pagePath,
+                });
+                setMm(false);
+              }}
               style={{
                 height: 44,
                 paddingHorizontal: 16,
@@ -173,7 +198,16 @@ export default function LessonScreen() {
               <Text style={{ color: !mm ? color.white : color.navy, fontWeight: "600" }}>{copy.academy.languageEn}</Text>
             </Pressable>
             <Pressable
-              onPress={() => setMm(true)}
+              onPress={() => {
+                if (mm) return;
+                captureProductEvent("language_toggled", {
+                  from_language: "en",
+                  to_language: "my",
+                  surface: "academy_lesson",
+                  page_path: pagePath,
+                });
+                setMm(true);
+              }}
               style={{
                 height: 44,
                 paddingHorizontal: 16,

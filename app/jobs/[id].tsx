@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import { captureProductEvent } from "../../src/analytics/client";
 import { loadJob, loadJobs } from "../../src/api/load";
 import { staleContentBanner } from "../../src/api/catalogue-presentation";
 import { jobTypeLabel } from "../../src/api/project";
@@ -30,6 +32,18 @@ export default function JobDetailScreen() {
     isError: listed.isError || detail.isError,
     online,
   });
+  const jobId = job?.id;
+  const companyId = job?.companyId || job?.company?.id;
+
+  useEffect(() => {
+    if (!jobId) return;
+    captureProductEvent("job_viewed", {
+      job_id: jobId,
+      company_id: companyId,
+      source: "android",
+      page_path: `/jobs/${jobId}`,
+    });
+  }, [jobId, companyId]);
 
   function retry() {
     void listed.refetch();

@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ModuleState } from "../../src/components/states/ModuleState";
 import { LOGIN_TRINITY, SETTINGS_URL, openWeb } from "../../src/linking/start";
+import { captureProductEvent } from "../../src/analytics/client";
 import { getDeviceSettings, setDeviceSetting, type DeviceSettings } from "../../src/storage/settings";
 import { color, tap } from "../../src/theme";
 
@@ -68,7 +69,16 @@ export default function MeScreen() {
         <SettingRow
           label="Language"
           value={settings.language}
-          onPress={() => setSettings(setDeviceSetting("language", settings.language === "English" ? "Myanmar" : "English"))}
+          onPress={() => {
+            const next = settings.language === "English" ? "Myanmar" : "English";
+            captureProductEvent("language_toggled", {
+              from_language: settings.language === "English" ? "en" : "my",
+              to_language: next === "English" ? "en" : "my",
+              surface: "device",
+              page_path: "/me",
+            });
+            setSettings(setDeviceSetting("language", next));
+          }}
         />
         <SettingRow
           label="Theme"
