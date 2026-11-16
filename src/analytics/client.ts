@@ -4,7 +4,7 @@ import {
   sanitizeMixpanelProperties,
   type MixpanelEventName,
 } from "./catalog";
-import { getOrCreateInstallId, hydrateInstallId } from "./identity";
+import { ensureInstallId } from "./identity";
 import { getMixpanelToken } from "./token";
 
 export type { MixpanelEventName };
@@ -43,7 +43,7 @@ async function postTrack(event: MixpanelEventName, properties: Record<string, un
   const token = getMixpanelToken();
   if (!token) return;
 
-  const distinctId = getOrCreateInstallId();
+  const distinctId = await ensureInstallId();
   const sanitized = sanitizeMixpanelProperties({
     ...properties,
     platform: appMeta.platform,
@@ -116,13 +116,11 @@ export function captureAppOpened(): void {
   });
 }
 
-/** Hydrate the install id, then emit app_opened. Safe to call more than once per process. */
+/** Kick off install-id hydration, then emit app_opened. Safe to call more than once per process. */
 export function initProductAnalytics(meta?: Partial<AppMeta>): void {
   if (meta) setAnalyticsAppMeta(meta);
   if (!getMixpanelToken()) return;
-  void hydrateInstallId()
-    .catch(() => undefined)
-    .finally(() => {
-      captureAppOpened();
-    });
+  void ensureInstallId().finally(() => {
+    captureAppOpened();
+  });
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
@@ -33,14 +33,17 @@ export default function AcademyScreen() {
     online,
   });
 
+  const visibleCountRef = useRef(visible.length);
+  visibleCountRef.current = visible.length;
+
   useEffect(() => {
     const q = search.trim();
     if (!q) return;
     const handle = setTimeout(() => {
-      trackAcademySearchUsed("learn_catalog", q, visible.length);
+      trackAcademySearchUsed("learn_catalog", q, visibleCountRef.current);
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(handle);
-  }, [search, visible.length]);
+  }, [search]);
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>

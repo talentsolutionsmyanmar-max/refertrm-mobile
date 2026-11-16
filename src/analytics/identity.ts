@@ -1,3 +1,4 @@
+import * as FileSystem from "expo-file-system/legacy";
 import { getKv } from "../storage/kv";
 import { boundedDistinctId } from "./catalog";
 
@@ -21,28 +22,30 @@ function opaqueId(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+function fileUri(): string | null {
+  const dir = FileSystem.documentDirectory;
+  return dir ? `${dir}${INSTALL_FILE}` : null;
+}
+
 function persistInstallId(id: string): void {
   getKv().set(INSTALL_ID_KEY, id);
   void writeInstallIdFile(id);
 }
 
 async function writeInstallIdFile(id: string): Promise<void> {
+  const uri = fileUri();
+  if (!uri) return;
   try {
-    const FileSystem = await import("expo-file-system/legacy");
-    const dir = FileSystem.documentDirectory;
-    if (!dir) return;
-    await FileSystem.writeAsStringAsync(`${dir}${INSTALL_FILE}`, id);
+    await FileSystem.writeAsStringAsync(uri, id);
   } catch {
     /* best-effort; memory kv still holds the id for this process */
   }
 }
 
 async function readInstallIdFile(): Promise<string | undefined> {
+  const uri = fileUri();
+  if (!uri) return undefined;
   try {
-    const FileSystem = await import("expo-file-system/legacy");
-    const dir = FileSystem.documentDirectory;
-    if (!dir) return undefined;
-    const uri = `${dir}${INSTALL_FILE}`;
     const info = await FileSystem.getInfoAsync(uri);
     if (!info.exists) return undefined;
     const raw = await FileSystem.readAsStringAsync(uri);
@@ -52,8 +55,7 @@ async function readInstallIdFile(): Promise<string | undefined> {
   }
 }
 
-/** Stable opaque install id. Never an email, phone, or name. */
-export function getOrCreateInstallId(): string {
+function getOrCreateInstallId(): string {
   const existing = boundedDistinctId(getKv().getString(INSTALL_ID_KEY));
   if (existing) return existing;
   const created = opaqueId();
@@ -61,8 +63,7 @@ export function getOrCreateInstallId(): string {
   return created;
 }
 
-/** Restore a previous install id from disk before the first event when possible. */
-export async function hydrateInstallId(): Promise<string> {
+async function loadInstallId(): Promise<string> {
   const existing = boundedDistinctId(getKv().getString(INSTALL_ID_KEY));
   if (existing) return existing;
   const fromFile = boundedDistinctId(await readInstallIdFile());
@@ -73,6 +74,17 @@ export async function hydrateInstallId(): Promise<string> {
   return getOrCreateInstallId();
 }
 
+let hydratePromise: Promise<string> | null = null;
+
+/** Shared hydrate-then-create. All Mixpanel posts must await this before using distinct_id. */
+export function ensureInstallId(): Promise<string> {
+  if (!hydratePromise) {
+    hydratePromise = loadInstallId().catch(() => getOrCreateInstallId());
+  }
+  return hydratePromise;
+}
+
 export function resetInstallIdForTests(): void {
   getKv().delete(INSTALL_ID_KEY);
+  hydratePromise = null;
 }

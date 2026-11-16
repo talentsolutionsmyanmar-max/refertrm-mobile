@@ -31,6 +31,9 @@ test("native academy, jobs, and language surfaces fire matching web event names"
   assert.ok(learn.includes("trackAcademySearchUsed"));
   assert.ok(learn.includes("SEARCH_DEBOUNCE_MS"));
   assert.ok(learn.includes('"learn_catalog"'));
+  assert.ok(learn.includes("visibleCountRef.current"));
+  assert.equal(learn.includes("[search, visible.length]"), false);
+  assert.match(learn, /return \(\) => clearTimeout\(handle\);\s*\}, \[search\]\);/);
 
   const job = read("app/jobs/[id].tsx");
   assert.ok(job.includes('captureProductEvent("job_viewed"'));

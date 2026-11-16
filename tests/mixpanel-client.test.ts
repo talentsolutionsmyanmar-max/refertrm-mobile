@@ -3,10 +3,10 @@ import { afterEach, beforeEach, mock, test } from "node:test";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { resetMemoryKv } from "../src/storage/kv";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const files = new Map<string, string>();
+const INSTALL_FILE_URI = "file:///mixpanel-test/refertrm.mixpanel.install-id.v1.txt";
 
 mock.module("expo-file-system/legacy", {
   namedExports: {
@@ -29,9 +29,17 @@ mock.module("expo-file-system/legacy", {
 const originalToken = process.env.EXPO_PUBLIC_MIXPANEL_TOKEN;
 const originalFetch = globalThis.fetch;
 
-beforeEach(() => {
+let resetMemoryKv: typeof import("../src/storage/kv").resetMemoryKv;
+let resetInstallIdForTests: typeof import("../src/analytics/identity").resetInstallIdForTests;
+
+beforeEach(async () => {
+  const kvApi = await import("../src/storage/kv");
+  const identityApi = await import("../src/analytics/identity");
+  resetMemoryKv = kvApi.resetMemoryKv;
+  resetInstallIdForTests = identityApi.resetInstallIdForTests;
   delete process.env.EXPO_PUBLIC_MIXPANEL_TOKEN;
   resetMemoryKv();
+  resetInstallIdForTests();
   files.clear();
   globalThis.fetch = async () => new Response("1", { status: 200 });
 });
@@ -159,6 +167,25 @@ test("token helper rejects short or secret-shaped values", async () => {
   assert.equal(getMixpanelToken(), null);
   process.env.EXPO_PUBLIC_MIXPANEL_TOKEN = "mp_android_token";
   assert.equal(getMixpanelToken(), "mp_android_token");
+});
+
+test("events await disk hydration and reuse the persisted install id", async () => {
+  process.env.EXPO_PUBLIC_MIXPANEL_TOKEN = "mp_android_token";
+  files.set(INSTALL_FILE_URI, "persisted-install-id");
+  resetMemoryKv();
+  resetInstallIdForTests();
+  const { captureProductEvent } = await import("../src/analytics/client");
+  const bodies: Array<{ properties: Record<string, unknown> }> = [];
+  globalThis.fetch = async (_input, options) => {
+    bodies.push(JSON.parse(String(options?.body))[0]);
+    return new Response("1", { status: 200 });
+  };
+  captureProductEvent("app_opened");
+  captureProductEvent("job_viewed", { job_id: "job-1" });
+  await new Promise((r) => setTimeout(r, 80));
+  assert.equal(bodies.length, 2);
+  assert.equal(bodies[0].properties.distinct_id, "persisted-install-id");
+  assert.equal(bodies[1].properties.distinct_id, "persisted-install-id");
 });
 
 test("client posts directly to Mixpanel HTTP and does not ship an SDK", () => {
